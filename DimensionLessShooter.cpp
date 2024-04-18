@@ -18,16 +18,18 @@ int linesSize = 6;
 
 SDL_FPoint playerPosition = { 0,0 };
 float speed = 800;
-float radius = 150;
+float radius = 150; //player size
+float mouseSensetivity = 0.3f;
 
-float FOV = 90;
+float FOV = 90; 
 float lFOV = 45 + 180;
 float hFOV = lFOV + FOV;
 
-float rayPrecision = 0.1f;
-float wallSize = 500.0f;
+float rayPrecision = 0.1f; //lower -> higher ray frequency -> worse performance
+float wallSize = 500.0f; //affects visual vertical wall size
 float viewDistance = 10000.0f;
-float mouseSensetivity = 0.3f;
+float aerialFactor = 1.5f; //keep around 1~2. affects how far you need to be for lines to start getting thinnier 
+float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
 
 void onStart()
 {
@@ -100,6 +102,8 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 	//render cycle
 	for (int i = 0; i < numPoints - 1; i++)
 	{
+		SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF( -255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2) , 0, 1) - 1), aerialLowerBorder, 255));
+
 		bool intersection = false;
 		if (lineIntersections[i] != lineIntersections[i + 1])
 		{
@@ -114,7 +118,7 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 		else
 		{
 			intersection = false;
-			if (linePoints[i].x >= 0 && linePoints[i + 1].x >= 0)
+			if (linePoints[i].x >= 0 && linePoints[i + 1].x >= 0) //intersection
 			{
 				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i].y);
 				SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i].y);
@@ -122,11 +126,12 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 				float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
 				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, y, linePoints[i + 1].x, WIN_HEIGHT - y);
 			}
-			else if (linePoints[i + 1].x >= 0)
+			else if (linePoints[i + 1].x >= 0) //most left border
 			{
+				SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
 				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, linePoints[i + 1].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
 			}
-			else
+			else //most right border
 			{
 				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i].x, WIN_HEIGHT - linePoints[i].y);
 			}
@@ -156,8 +161,7 @@ void lineCollide(const ZHIR_LineF& line, SDL_FPoint& newPos)
 
 void eachFrame(float delta)
 {
-	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-
+	//SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 	inputUpdate();
 	lFOV += MousePosRel.x * mouseSensetivity;
 
