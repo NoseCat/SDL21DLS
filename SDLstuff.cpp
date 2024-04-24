@@ -3,6 +3,8 @@
 
 #pragma region INIT
 
+extern SDL_FPoint playerPosition;
+
 int WIN_WIDTH = 1280;
 int WIN_HEIGHT = 720;
 SDL_Point WIN_CENTER = { WIN_WIDTH / 2, WIN_HEIGHT / 2 };
@@ -46,7 +48,7 @@ void Init()
 		deInit(1);
 	}
 
-	win = SDL_CreateWindow("Window",
+	win = SDL_CreateWindow("SDL21DLS",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIN_WIDTH, WIN_HEIGHT,
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (win == NULL)
@@ -241,13 +243,36 @@ SDL_FPoint ZHIR_dotProjLineF(const ZHIR_LineF& line, const SDL_FPoint& p)
 	return ZHIR_findIntersectF(line, { p, C });
 }
 
+int ZHIR_vecFindAngle(const SDL_Point& vec1, const SDL_Point& vec2)
+{
+	return (int)(acos(ZHIR_vecMultScalar(vec1, vec2) / (ZHIR_vecLength(vec1) * ZHIR_vecLength(vec2))) * 180 / M_PI);
+}
 float ZHIR_vecFindAngleF(const SDL_FPoint& vec1, const SDL_FPoint& vec2)
 {
 	return acos(ZHIR_vecMultScalarF(vec1, vec2) / (ZHIR_vecLengthF(vec1) * ZHIR_vecLengthF(vec2))) * 180 / M_PI;
 }
-int ZHIR_vecFindAngle(const SDL_Point& vec1, const SDL_Point& vec2)
+
+int ZHIR_vecFindAngleFull(const SDL_Point& vec1, const SDL_Point& vec2)
 {
-	return (int)(acos(ZHIR_vecMultScalar(vec1, vec2) / (ZHIR_vecLength(vec1) * ZHIR_vecLength(vec2))) * 180 / M_PI);
+	int angle = ((float)(vec1.y > 0) * -2 + 1) * ZHIR_vecFindAngle(vec1, { 1,0 });
+
+	SDL_Point nVec1 = ZHIR_rotateOnDegree(vec1, { 0,0 }, angle);
+	SDL_Point nVec2 = ZHIR_rotateOnDegree(vec2, { 0,0 }, angle);
+
+	if (nVec2.y > nVec1.y)
+		return 360.0f - ZHIR_vecFindAngle(nVec1, nVec2);
+	return ZHIR_vecFindAngle(nVec1, nVec2);
+}
+float ZHIR_vecFindAngleFullF(const SDL_FPoint& vec1, const SDL_FPoint& vec2)
+{
+	float angle = ((float)(vec1.y > 0) * -2 + 1) * ZHIR_vecFindAngleF(vec1, { 1,0 });
+
+	SDL_FPoint nVec1 = ZHIR_rotateOnDegreeF(vec1, { 0,0 }, angle);
+	SDL_FPoint nVec2 = ZHIR_rotateOnDegreeF(vec2, { 0,0 }, angle);
+
+	if (nVec2.y > nVec1.y)
+		return 360.0f - ZHIR_vecFindAngleF(nVec1, nVec2);
+	return ZHIR_vecFindAngleF(nVec1, nVec2);
 }
 
 int ZHIR_findIntersectAngle(const ZHIR_Line& line1, const ZHIR_Line& line2)

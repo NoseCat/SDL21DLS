@@ -113,13 +113,17 @@ bool ZHIR_isIntersectF(const ZHIR_LineF& line1, const ZHIR_LineF& line2);
 SDL_Point ZHIR_findIntersect(const ZHIR_Line& line1, const ZHIR_Line& line2);
 SDL_FPoint ZHIR_findIntersectF(const ZHIR_LineF& line1, const ZHIR_LineF& line2);
 
-//находит угол между векторами
+//находит угол между векторами (математически это всегда число от 0 до 180)
 int ZHIR_vecFindAngle(const SDL_Point& vec1, const SDL_Point& vec2);
 float ZHIR_vecFindAngleF(const SDL_FPoint& vec1, const SDL_FPoint& vec2);
 
-//находит угол между линиями
+//находит угол между линиями (смотри ZHIR_vecFindAngle)
 int ZHIR_findIntersectAngle(const ZHIR_Line& line1, const ZHIR_Line& line2);
 float ZHIR_findIntersectAngleF(const ZHIR_LineF& line1, const ZHIR_LineF& line2);
+
+//находит полный угол между линиями (от 0 до 360)
+int ZHIR_vecFindAngleFull(const SDL_Point& vec1, const SDL_Point& vec2);
+float ZHIR_vecFindAngleFullF(const SDL_FPoint& vec1, const SDL_FPoint& vec2);
 
 //Возвращает проекцию точки p на линию line
 SDL_Point ZHIR_dotProjLine(const ZHIR_Line& line, const SDL_Point& p);

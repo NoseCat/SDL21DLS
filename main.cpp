@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
 
 	while (RUN)
 	{
+		MousePosRel = { 0,0 };
 		while (SDL_PollEvent(&ev))
 		{
 			switch (ev.type)

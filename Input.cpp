@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Input.h"
 
 SDL_FPoint MousePos = { 0,0 };
@@ -16,7 +15,7 @@ void inputUpdate()
 	InputDir.y = (float)input_DOWN - (float)input_UP;
 	InputDir = ZHIR_vecNormal(InputDir);
 
-	if (MousePosRel.x == lastMousePosRel.x && MousePosRel.y == lastMousePosRel.y)
-		MousePosRel = { 0,0 };
-	lastMousePosRel = MousePosRel;
+	//if (MousePosRel.x == lastMousePosRel.x && MousePosRel.y == lastMousePosRel.y)
+	//	MousePosRel = { 0,0 };
+	//lastMousePosRel = MousePosRel;
 }
