@@ -10,6 +10,7 @@ struct Entity
 	float radius;
 
 	//texture sprite
+	SDL_Texture* sprite;
 	//real position of sprite
 	ZHIR_LineF face1;
 	//sprites on screen position
@@ -54,18 +55,26 @@ float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
 
 void onStart()
 {
-	/*SDL_Surface* myImage = IMG_Load("1.bmp");
-	SDL_SetColorKey(myImage, SDL_TRUE, SDL_MapRGB(myImage->format, 255, 255, 255));
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, myImage);
-	SDL_RenderCopy(renderer, texture, NULL, &(ball.size));*/
+	//needs check for safety
+	SDL_Surface* myImage = IMG_Load("1.png");
+	if (myImage == NULL)
+	{
+		printf("1 wrong");
+		system("pause");
+		exit(1);
+	}
+	//SDL_SetColorKey(myImage, SDL_TRUE, SDL_MapRGB(myImage->format, 255, 255, 255));
+
+	enemy1.sprite = SDL_CreateTextureFromSurface(ren, myImage);
+	enemy2.sprite = SDL_CreateTextureFromSurface(ren, myImage);
 
 	enemy1.position = { 250, 250 };
 	enemy1.dir = { 0,0 };
 	enemy1.speed = 600;
-	enemy1.radius = 100;
+	enemy1.radius = 200;
 	enemy1.vertSize = 400;
 
-	enemy2.position = { 350, 250 };
+	enemy2.position = { 500, 250 };
 	enemy2.dir = { 0,0 };
 	enemy2.speed = 300;
 	enemy2.radius = 100;
@@ -218,6 +227,34 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 //	}
 //}
 
+SDL_Rect ZHIR_FRectToRect(const SDL_FRect& rect)
+{
+	return { (int)round(rect.x), (int)round(rect.y), (int)round(rect.w), (int)round(rect.h) };
+}
+
+void renderImage(SDL_Texture* texture, const SDL_FRect& fullRect, const SDL_FRect& cutRect)
+{
+	//rects fix
+	SDL_Rect cutRectI = ZHIR_FRectToRect(cutRect);
+	SDL_Rect fullRectI = ZHIR_FRectToRect(fullRect);
+	fullRectI.w = abs(fullRectI.w);
+	fullRectI.x -= fullRectI.w;
+
+	//image sizes
+	fullRectI.x = 100 * (cutRect.x - fullRectI.x) / fullRectI.w;
+	fullRectI.y = 126 * (cutRect.y - fullRectI.y) / fullRectI.h;
+	fullRectI.w = 100 * cutRect.w / fullRectI.w;
+	fullRectI.h = 126 * cutRect.h / fullRectI.h;
+
+	SDL_RenderCopy(ren, texture, &fullRectI, &cutRectI);
+
+	/*SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
+	SDL_RenderDrawRect(ren, &fullRectI);
+	SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+	SDL_RenderDrawRect(ren, &cutRectI);
+	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);*/
+}
+
 void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize)
 {
 	/*ZHIR_LineF* extLinesArr = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * (linesArrSize + entityArrSize));
@@ -234,10 +271,12 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 			continue;
 
 		//fullrect is off for showcase
-		SDL_FRect fullRect = { entityArr[k].face2.a.x + 10, entityArr[k].face2.a.y - 10, entityArr[k].face2.b.x - entityArr[k].face2.a.x - 20, entityArr[k].face2.b.y - entityArr[k].face2.a.y + 20 };
-		SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
-		SDL_RenderDrawRectF(ren, &fullRect);
-		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+		SDL_FRect fullRect = { entityArr[k].face2.a.x, entityArr[k].face2.a.y,
+			entityArr[k].face2.b.x - entityArr[k].face2.a.x, entityArr[k].face2.b.y - entityArr[k].face2.a.y };
+
+		//SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+		//SDL_RenderDrawRectF(ren, &fullRect);
+		//SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 
 		float angleA = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.a, playerPosition), { 1, 0 });
 		float angleB = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.b, playerPosition), { 1, 0 });
@@ -271,13 +310,19 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 			else
 			{
 				if (rect.w > 0)
-					SDL_RenderDrawRectF(ren, &rect);
+				{
+					//SDL_RenderDrawRectF(ren, &rect);
+					renderImage(entityArr[k].sprite, fullRect, rect);
+				}
 				rect.x += rect.w;
 				rect.w = 0;
 			}
 		}
 		if (rect.w > 0)
-			SDL_RenderDrawRectF(ren, &rect);
+		{
+			//SDL_RenderDrawRectF(ren, &rect);
+			renderImage(entityArr[k].sprite, fullRect, rect);
+		}
 	}
 }
 
@@ -397,25 +442,27 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 //	ZHIR_swapF(e1.face2.b.y, e2.face2.b.y);
 //}
 
+void ZHIR_swapEntity(Entity& firstVariable, Entity& secondVariable)
+{
+	Entity tempAdress = firstVariable;
+	firstVariable = secondVariable;
+	secondVariable = tempAdress;
+}
+
 void enemyPreRender(Entity* entityArr, int entityArrSize)
 {
 	//array sort (bubble)
-	//bool sort = true;
-	//while (sort)
-	//{
-	//	for (int i = 0; i < entityArrSize - 1; i++)
-	//	{
-	//		float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i].position, playerPosition));
-	//		float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1].position, playerPosition));
-	//		if (len1 < len2)
-	//		{
-	//			ZHIR_entitySwap(entityArr[i], entityArr[i + 1]);
-	//			sort = true;
-	//			break;
-	//		}
-	//		sort = false;
-	//	}
-	//}
+	//didnt test!
+	for (int i = 0; i < entityArrSize - 2; i++)
+		for (int j = 0; j < entityArrSize - 2; j++)
+		{
+			float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i].position, playerPosition));
+			float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1].position, playerPosition));
+			if (len1 < len2)
+			{
+				ZHIR_swapEntity(entityArr[i], entityArr[i + 1]);
+			}
+		}
 
 	//faces computation
 	for (int i = 0; i < entityArrSize; i++)
@@ -500,6 +547,9 @@ void eachFrame(float delta)
 		lineCollide(lines[i], newPosition);
 	playerPosition = newPosition;
 
+	SDL_Rect srect = { 100, 100, 150, 150 };
+	SDL_Rect rect = { 0, 0, 1000, 1000 };
+	SDL_RenderCopy(ren, enemies[0].sprite, &srect, &rect);
 
 	enemyPreRender(enemies, enemiesAmount);
 

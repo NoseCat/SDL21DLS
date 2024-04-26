@@ -30,6 +30,7 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
+	printf("SDL init succ\n");
 
 	int res;
 	res = IMG_Init(IMG_INIT_PNG);
@@ -39,7 +40,8 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
-	if (res & IMG_INIT_PNG) printf("png init succ\n"); else printf("no png init :(\n");
+	printf("IMG init succ\n");
+	if (res & IMG_INIT_PNG) printf("\tpng init succ\n"); else printf("no png init :(\n");
 
 	if (TTF_Init())
 	{
@@ -47,6 +49,7 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
+	printf("TTF init succ\n");
 
 	win = SDL_CreateWindow("SDL21DLS",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIN_WIDTH, WIN_HEIGHT,
@@ -57,6 +60,7 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
+	printf("\nwindow created\n");
 
 	ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 	if (ren == NULL)
@@ -65,6 +69,7 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
+	printf("render created\n");
 }
 #pragma endregion //INIT
 
