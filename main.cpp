@@ -103,6 +103,8 @@ int main(int argc, char* argv[])
 		SDL_RenderClear(ren);
 	}
 
+	onEnd();
+
 	deInit(0);
 	return 0;
 }

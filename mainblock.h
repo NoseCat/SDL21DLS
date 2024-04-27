@@ -8,4 +8,7 @@ void onStart();
 //Вызывается каждый кадр
 void eachFrame(float delta);
 
+//Вызывается после основного игрового цикла
+void onEnd();
+
 #endif

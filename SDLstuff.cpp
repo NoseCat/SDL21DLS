@@ -1,5 +1,4 @@
-﻿#include <iostream>
-#include "SDLstuff.h"
+﻿#include "SDLstuff.h"
 
 #pragma region INIT
 

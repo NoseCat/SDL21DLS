@@ -1,6 +1,7 @@
 #pragma once
 #ifndef _SDL_STUFF_H_
 #define _SDL_STUFF_H_
+#include <iostream>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
