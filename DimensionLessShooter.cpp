@@ -9,12 +9,21 @@ struct Sprite
 	int h;
 };
 
+
+enum EnemyTypes { RUNNER, SHOOTER };
+
 struct Entity
 {
-	SDL_FPoint position;
-	SDL_FPoint dir;
-	float speed;
+	int type;
+
 	float radius;
+	SDL_FPoint position;
+	SDL_FPoint dir = { 1, 0 };
+	float speed;
+	SDL_FPoint speedVec = { 0,0 };
+	float speedLimit = 2500;
+	float accel;
+	SDL_FPoint accelVec = { 0,0 };
 
 	Sprite* sprite;
 	/*SDL_Texture* sprite;
@@ -50,18 +59,27 @@ int linesSize = 7;
 
 Sprite sprite1;
 
-SDL_FPoint playerPosition = { 0,0 };
-float speed = 800;
-float radius = 150; //player size
+//player global values
+struct Player {
+	SDL_FPoint position = { 0,0 };
+	float radius = 150; //player size
+	SDL_FPoint speedVec = { 0,0 };
+	float speed = 0;
+	float speedLimit = 2500;
+	float friction = 6000;
+	SDL_FPoint accelVec = { 0,0 };
+	float accel = 10000 + friction;
+
+	float FOV = 90;
+	float lFOV = 45 + 180;
+	float hFOV = lFOV + FOV;
+} player;
+
+//settings
 float mouseSensetivity = 15.0f;
-
-float FOV = 90;
-float lFOV = 45 + 180;
-float hFOV = lFOV + FOV;
-
-float rayPrecision = 0.2f;
+float rayPrecision = 0.1f;
 float wallSize = 500.0f; //affects visual vertical wall size
-float viewDistance = 10000.0f;
+float viewDistance = 20000.0f;
 float aerialFactor = 1.5f; //keep around 1~2. affects how far you need to be for lines to start getting thinner
 float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
 
@@ -90,16 +108,20 @@ void onStart()
 	enemy1.sprite = &sprite1;
 	enemy2.sprite = &sprite1;
 
+	enemy1.accel = 1000;
+	enemy1.speedLimit = 5000;
+	enemy1.type = RUNNER;
 	enemy1.position = { 250, 250 };
-	enemy1.dir = { 0,0 };
 	enemy1.speed = 600;
 	enemy1.radius = 200;
 	enemy1.vertSize = 400;
 	//enemy1.radius = enemy1.sprite->w / 2;
 	//enemy1.vertSize = enemy1.sprite->h;
 
+	enemy2.accel = 1000;
+	enemy2.speedLimit = 5000;
+	enemy2.type = RUNNER;
 	enemy2.position = { 500, 250 };
-	enemy2.dir = { 0,0 };
 	enemy2.speed = 300;
 	enemy2.radius = 100;
 	enemy2.vertSize = wallSize / 2;
@@ -138,8 +160,8 @@ void onStart()
 void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 {
 	//initializtion
-	SDL_FPoint unitVec = ZHIR_vecSumF(playerPosition, { 1,0 });
-	int numPoints = ((int)(FOV / rayPrecision) + 1);
+	SDL_FPoint unitVec = ZHIR_vecSumF(player.position, { 1,0 });
+	int numPoints = ((int)(player.FOV / rayPrecision) + 1);
 	SDL_FPoint* linePoints = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * numPoints);
 	int* lineIntersections = (int*)malloc(sizeof(int) * numPoints);
 	for (int i = 0; i < numPoints; i++)
@@ -150,23 +172,23 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 
 	//compute cycle
 	numPoints = 0;
-	for (float angle = lFOV; angle <= hFOV; angle += rayPrecision)
+	for (float angle = player.lFOV; angle <= player.hFOV; angle += rayPrecision)
 	{
-		SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, playerPosition, angle), playerPosition)), viewDistance);
-		ray = ZHIR_vecSumF(ray, playerPosition);
+		SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, player.position, angle), player.position)), viewDistance);
+		ray = ZHIR_vecSumF(ray, player.position);
 		float minDistance = viewDistance;
-		//SDL_RenderDrawLineF(ren, playerPosition.x, playerPosition.y, ray.x, ray.y);
+		//SDL_RenderDrawLineF(ren, player.position.x, playerPosition.y, ray.x, ray.y);
 		for (int i = 0; i < linesArrSize; i++)
 		{
 			float distance = 0;
-			if (ZHIR_isIntersectF({ playerPosition, ray }, linesArr[i]))
+			if (ZHIR_isIntersectF({ player.position, ray }, linesArr[i]))
 			{
-				distance = ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ playerPosition, ray }, linesArr[i]), playerPosition));
+				distance = ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, linesArr[i]), player.position));
 				if (distance < minDistance)
 				{
 					minDistance = distance;
 					float size = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * wallSize / minDistance;
-					float x = WIN_WIDTH * (angle - lFOV) / FOV;
+					float x = WIN_WIDTH * (angle - player.lFOV) / player.FOV;
 					linePoints[numPoints] = { x,  size };
 					lineIntersections[numPoints] = i;
 				}
@@ -243,7 +265,7 @@ void renderImage(const Sprite* sprite, const SDL_FRect& fullRect, const SDL_FRec
 
 	SDL_Rect fullRectFixedI = ZHIR_FRectToRect(fullRectFixed);
 	SDL_Rect cutRectI = ZHIR_FRectToRect(cutRect);
-	
+
 	SDL_RenderCopy(ren, sprite->texture, &fullRectFixedI, &cutRectI);
 
 	/*SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
@@ -260,19 +282,19 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 		extLinesArr[i] = linesArr[i];
 	for (int i = linesArrSize; i < linesArrSize + entityArrSize; i++)
 		extLinesArr[i] = entityArr[i - linesArrSize].face1;*/
-	SDL_FPoint unitVec = ZHIR_vecSumF(playerPosition, { 1,0 });
+	SDL_FPoint unitVec = ZHIR_vecSumF(player.position, { 1,0 });
 
 	for (int k = 0; k < entityArrSize; k++)
 	{
-		float distToEnt = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[k].position, playerPosition));
+		float distToEnt = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[k].position, player.position));
 		if (distToEnt > viewDistance)
 			continue;
 
 		SDL_FRect fullRect = { entityArr[k].face2.a.x, entityArr[k].face2.a.y,
 			entityArr[k].face2.b.x - entityArr[k].face2.a.x, entityArr[k].face2.b.y - entityArr[k].face2.a.y };
 
-		float angleA = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.a, playerPosition), { 1, 0 });
-		float angleB = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.b, playerPosition), { 1, 0 });
+		float angleA = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.a, player.position), { 1, 0 });
+		float angleB = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.b, player.position), { 1, 0 });
 		if (angleA < angleB)
 			angleB -= 360;
 
@@ -280,13 +302,13 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 		SDL_FRect rect = { entityArr[k].face2.b.x, entityArr[k].face2.a.y, 0, entityArr[k].face2.b.y - entityArr[k].face2.a.y };
 		for (float angle = angleB; angle <= angleA; angle += rayPrecision)
 		{
-			SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, playerPosition, angle), playerPosition)), viewDistance);
-			ray = ZHIR_vecSumF(ray, playerPosition);
+			SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, player.position, angle), player.position)), viewDistance);
+			ray = ZHIR_vecSumF(ray, player.position);
 
 			bool intersect = false;
 			for (int i = 0; i < linesArrSize; i++)
-				if (ZHIR_isIntersectF({ playerPosition, ray }, linesArr[i]) &&
-					ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ playerPosition, ray }, linesArr[i]), playerPosition)) < distToEnt)
+				if (ZHIR_isIntersectF({ player.position, ray }, linesArr[i]) &&
+					ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, linesArr[i]), player.position)) < distToEnt)
 				{
 					intersect = true;
 					break;
@@ -297,12 +319,12 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 			else
 			{
 				if (!draw)
-					rect.x += WIN_WIDTH * rayPrecision / FOV;
+					rect.x += WIN_WIDTH * rayPrecision / player.FOV;
 				draw = false;
 			}
 
 			if (draw)
-				rect.w += WIN_WIDTH * rayPrecision / FOV;
+				rect.w += WIN_WIDTH * rayPrecision / player.FOV;
 			else
 			{
 				if (rect.w > 0)
@@ -331,8 +353,8 @@ void enemyPreRender(Entity* entityArr, int entityArrSize)
 	for (int i = 0; i < entityArrSize - 1; i++)
 		for (int j = 0; j < entityArrSize - 1; j++)
 		{
-			float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i].position, playerPosition));
-			float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1].position, playerPosition));
+			float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i].position, player.position));
+			float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1].position, player.position));
 			if (len1 < len2)
 			{
 				ZHIR_swapEntity(entityArr[i], entityArr[i + 1]);
@@ -343,26 +365,26 @@ void enemyPreRender(Entity* entityArr, int entityArrSize)
 	for (int i = 0; i < entityArrSize; i++)
 	{
 		//face1 compute
-		SDL_FPoint entityFlatPoint1 = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i].position, playerPosition), { 0,0 }, 90)), entityArr[i].radius));
-		SDL_FPoint entityFlatPoint2 = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i].position, playerPosition), { 0,0 }, -90)), entityArr[i].radius));
+		SDL_FPoint entityFlatPoint1 = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i].position, player.position), { 0,0 }, 90)), entityArr[i].radius));
+		SDL_FPoint entityFlatPoint2 = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i].position, player.position), { 0,0 }, -90)), entityArr[i].radius));
 		entityArr[i].face1 = { entityFlatPoint1 , entityFlatPoint2 };
 
 		//face2.a compute (pay attention to size)
-		float distance1 = ZHIR_vecLengthF(ZHIR_vecSubF(playerPosition, entityFlatPoint1));
+		float distance1 = ZHIR_vecLengthF(ZHIR_vecSubF(player.position, entityFlatPoint1));
 		float size1 = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * (2 * entityArr[i].vertSize - wallSize) / distance1;
-		float angle1 = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityFlatPoint1, playerPosition), { 1, 0 });
-		float nAngle1 = angle1 - lFOV;
+		float angle1 = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityFlatPoint1, player.position), { 1, 0 });
+		float nAngle1 = angle1 - player.lFOV;
 		if (nAngle1 < 0)
 			nAngle1 += 360;
 		if (nAngle1 > 360)
 			nAngle1 -= 360;
-		float x1 = WIN_WIDTH * (nAngle1) / FOV;
+		float x1 = WIN_WIDTH * (nAngle1) / player.FOV;
 
 		//face2.b compute 
-		float distance2 = ZHIR_vecLengthF(ZHIR_vecSubF(playerPosition, entityFlatPoint2));
+		float distance2 = ZHIR_vecLengthF(ZHIR_vecSubF(player.position, entityFlatPoint2));
 		float size2 = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * wallSize / distance2;
-		float angle2 = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityFlatPoint2, playerPosition), { 1, 0 });
-		float nAngle2 = angle2 - lFOV;
+		float angle2 = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityFlatPoint2, player.position), { 1, 0 });
+		float nAngle2 = angle2 - player.lFOV;
 		if (nAngle2 < 0)
 			nAngle2 += 360;
 		if (nAngle2 > 360)
@@ -370,7 +392,7 @@ void enemyPreRender(Entity* entityArr, int entityArrSize)
 		if (nAngle1 < nAngle2)
 			nAngle2 -= 360;
 		// this ifs section looks idk
-		float x2 = WIN_WIDTH * (nAngle2) / FOV;
+		float x2 = WIN_WIDTH * (nAngle2) / player.FOV;
 
 		entityArr[i].face2 = { {x1,size1}, {x2, WIN_HEIGHT - size2} };
 		/*	SDL_RenderDrawLineF(ren, x1, size1, x2, size2);
@@ -387,46 +409,106 @@ void enemyPreRender(Entity* entityArr, int entityArrSize)
 void lineCollide(const ZHIR_LineF& line, SDL_FPoint& newPos)
 {
 	SDL_FPoint proj = ZHIR_dotProjLineF(line, newPos);
-	if (ZHIR_vecLengthF(ZHIR_vecSubF(proj, newPos)) < radius && ZHIR_isOnLineF(line, proj))
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(proj, newPos)) < player.radius && ZHIR_isOnLineF(line, proj))
 	{
-		newPos = ZHIR_vecSumF(proj, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, proj)), radius));
+		newPos = ZHIR_vecSumF(proj, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, proj)), player.radius));
 	}
-	if (ZHIR_vecLengthF(ZHIR_vecSubF(line.a, newPos)) < radius)
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(line.a, newPos)) < player.radius)
 	{
-		newPos = ZHIR_vecSumF(line.a, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.a)), radius));
+		newPos = ZHIR_vecSumF(line.a, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.a)), player.radius));
 	}
-	if (ZHIR_vecLengthF(ZHIR_vecSubF(line.b, newPos)) < radius)
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(line.b, newPos)) < player.radius)
 	{
-		newPos = ZHIR_vecSumF(line.b, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.b)), radius));
+		newPos = ZHIR_vecSumF(line.b, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.b)), player.radius));
 	}
 }
 
 #pragma endregion //Collision
 
+#pragma region Enemies
+
+void enemyRunnerBehavior(Entity& entity, float delta)
+{
+	//entity.dir = ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position));
+	float rotSpeed = 100.0f * delta;
+	SDL_FPoint desirableDir = ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position));
+	float angle = ZHIR_vecFindAngleFullF(desirableDir, entity.dir);
+	if (angle < 180)
+		entity.dir = ZHIR_rotateOnDegreeF(entity.dir, { 0,0 }, rotSpeed);
+	else
+		entity.dir = ZHIR_rotateOnDegreeF(entity.dir, { 0,0 }, -rotSpeed);
+}
+
+//bool , return collision with player
+void updateEnemies(Entity* entityArr, int entityArrSize, float delta)
+{
+	for (int i = 0; i < entityArrSize; i++)
+	{
+		entityArr[i].accelVec = ZHIR_vecMultF(entityArr[i].dir , entityArr[i].accel);
+
+		entityArr[i].speedVec = ZHIR_vecSumF(entityArr[i].speedVec, ZHIR_vecMultF(entityArr[i].accelVec, delta));
+		entityArr[i].speed = ZHIR_slapF(ZHIR_vecLengthF(entityArr[i].speedVec), 0, entityArr[i].speedLimit);
+		entityArr[i].speedVec = ZHIR_vecMultF(ZHIR_vecNormal(entityArr[i].speedVec), entityArr[i].speed);
+		
+		SDL_FPoint newPosition = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(entityArr[i].dir, entityArr[i].speed * delta));
+		for (int i = 0; i < linesSize; i++)
+			lineCollide(lines[i], newPosition);
+		entityArr[i].position = newPosition;
+	}
+
+	for (int i = 0; i < entityArrSize; i++)
+		switch (entityArr[i].type)
+		{
+		case RUNNER:
+			enemyRunnerBehavior(entityArr[i], delta);
+			break;
+
+		case SHOOTER:
+
+			break;
+
+		default:
+			printf("strange enemy type\n");
+		}
+}
+
+#pragma endregion //Enemies
+
 void eachFrame(float delta)
 {
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 	inputUpdate();
-	lFOV += MousePosRel.x * mouseSensetivity * delta;
+	player.lFOV += MousePosRel.x * mouseSensetivity * delta;
 
 	SDL_WarpMouseInWindow(win, WIN_CENTER.x, WIN_CENTER.y);
 
-	if (lFOV < 0)
-		lFOV += 360;
-	if (lFOV > 360)
-		lFOV -= 360;
-	hFOV = lFOV + FOV;
+	if (player.lFOV < 0)
+		player.lFOV += 360;
+	if (player.lFOV > 360)
+		player.lFOV -= 360;
+	player.hFOV = player.lFOV + player.FOV;
 
 	/*for (int i = 0; i < linesSize; i++)
 		SDL_RenderDrawLineF(ren, lines[i].a.x, lines[i].a.y, lines[i].b.x, lines[i].b.y);
 	for (int i = 0; i < enemiesAmount; i++)
 		SDL_RenderDrawLineF(ren, enemies[i].face1.a.x, enemies[i].face1.a.y, enemies[i].face1.b.x, enemies[i].face1.b.y);*/
 
-	SDL_FPoint newPosition = ZHIR_vecSumF(playerPosition, ZHIR_vecMultF(ZHIR_rotateOnDegreeF(InputDir, { 0,0 }, lFOV + 180 - FOV / 2), speed * delta));
+	player.accelVec = ZHIR_vecMultF(ZHIR_rotateOnDegreeF(InputDir, { 0,0 }, player.lFOV + 180 - player.FOV / 2), player.accel);
+	player.accelVec = ZHIR_vecSumF(player.accelVec, ZHIR_vecMultF(ZHIR_vecNormal(player.speedVec), -player.friction));
+
+	player.speedVec = ZHIR_vecSumF(player.speedVec, ZHIR_vecMultF(player.accelVec, delta));
+	player.speed = ZHIR_slapF(ZHIR_vecLengthF(player.speedVec), 0, player.speedLimit);
+	if (player.speed < 150)
+		player.speed = 0;
+	player.speedVec = ZHIR_vecMultF(ZHIR_vecNormal(player.speedVec), player.speed);
+	//player.speedVec = ZHIR_vecMultF(ZHIR_rotateOnDegreeF(InputDir, { 0,0 }, player.lFOV + 180 - player.FOV / 2), player.speed * delta);
+	SDL_FPoint newPosition = ZHIR_vecSumF(player.position, ZHIR_vecMultF(player.speedVec, delta));
 
 	for (int i = 0; i < linesSize; i++)
 		lineCollide(lines[i], newPosition);
-	playerPosition = newPosition;
+	player.position = newPosition;
+
+	updateEnemies(enemies, enemiesAmount, delta);
 
 	enemyPreRender(enemies, enemiesAmount);
 

@@ -269,7 +269,7 @@ int ZHIR_vecFindAngleFull(const SDL_Point& vec1, const SDL_Point& vec2)
 }
 float ZHIR_vecFindAngleFullF(const SDL_FPoint& vec1, const SDL_FPoint& vec2)
 {
-	float angle = ((float)(vec1.y > 0) * -2 + 1) * ZHIR_vecFindAngleF(vec1, { 1,0 });
+	float angle = ((float)(vec1.y > 0) * -2.0f + 1.0f) * ZHIR_vecFindAngleF(vec1, { 1,0 });
 
 	SDL_FPoint nVec1 = ZHIR_rotateOnDegreeF(vec1, { 0,0 }, angle);
 	SDL_FPoint nVec2 = ZHIR_rotateOnDegreeF(vec2, { 0,0 }, angle);
