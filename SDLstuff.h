@@ -133,6 +133,9 @@ SDL_FPoint ZHIR_dotProjLineF(const ZHIR_LineF& line, const SDL_FPoint& p);
 //Возвращает площадь пересечения прямоугольников или ноль если не пересекается
 int ZHIR_rectOverlap(const SDL_Rect& rect1, const SDL_Rect& rect2);
 
+//Правильная конвертация (округление) из SDL_Frect в SDL_Rect 
+SDL_Rect ZHIR_FRectToRect(const SDL_FRect& rect);
+
 #pragma endregion //VectorMath & Geometry 
 
 #pragma region Color

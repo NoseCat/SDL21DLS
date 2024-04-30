@@ -137,15 +137,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="DimensionLessShooter.cpp" />
+    <ClCompile Include="EnemyBehavior.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Render.cpp" />
     <ClCompile Include="SDLstuff.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Collision.h" />
+    <ClInclude Include="EnemyBehavior.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="mainblock.h" />
+    <ClInclude Include="Render.h" />
     <ClInclude Include="SDLstuff.h" />
+    <ClInclude Include="Structs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

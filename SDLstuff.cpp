@@ -364,6 +364,11 @@ int ZHIR_rectOverlap(const SDL_Rect& rect1, const SDL_Rect& rect2)
 	return width * height;
 }
 
+SDL_Rect ZHIR_FRectToRect(const SDL_FRect& rect)
+{
+	return { (int)round(rect.x), (int)round(rect.y), (int)round(rect.w), (int)round(rect.h) };
+}
+
 #pragma endregion //VectorMath & Geometry 
 
 #pragma region Color
