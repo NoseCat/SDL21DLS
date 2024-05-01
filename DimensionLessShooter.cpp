@@ -74,12 +74,12 @@ void onStart()
 	//enemy1.radius = enemy1.sprite->w / 2;
 	//enemy1.vertSize = enemy1.sprite->h;
 
-	enemy2.accel = 4000;
-	enemy2.speedLimit = 5000;
-	enemy2.type = RUNNER;
+	enemy2.accel = 10000;
+	enemy2.speedLimit = 1000;
+	enemy2.type = SHOOTER;
 	enemy2.position = { 500, 250 };
 	enemy2.speed = 300;
-	enemy2.friction = 2000;
+	enemy2.friction = 6000;
 	enemy2.radius = 100;
 	enemy2.vertSize = wallSize / 2;
 
