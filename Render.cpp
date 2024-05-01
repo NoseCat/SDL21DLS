@@ -113,7 +113,7 @@ void renderImage(const Sprite* sprite, const SDL_FRect& fullRect, const SDL_FRec
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);*/
 }
 
-void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize)
+void entityRender(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize)
 {
 	/*ZHIR_LineF* extLinesArr = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * (linesArrSize + entityArrSize));
 	for (int i = 0; i < linesArrSize; i++)
@@ -124,20 +124,20 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 
 	for (int k = 0; k < entityArrSize; k++)
 	{
-		float distToEnt = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[k].position, player.position));
+		float distToEnt = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[k]->position, player.position));
 		if (distToEnt > viewDistance)
 			continue;
 
-		SDL_FRect fullRect = { entityArr[k].face2.a.x, entityArr[k].face2.a.y,
-			entityArr[k].face2.b.x - entityArr[k].face2.a.x, entityArr[k].face2.b.y - entityArr[k].face2.a.y };
+		SDL_FRect fullRect = { entityArr[k]->face2.a.x, entityArr[k]->face2.a.y,
+			entityArr[k]->face2.b.x - entityArr[k]->face2.a.x, entityArr[k]->face2.b.y - entityArr[k]->face2.a.y };
 
-		float angleA = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.a, player.position), { 1, 0 });
-		float angleB = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k].face1.b, player.position), { 1, 0 });
+		float angleA = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k]->face1.a, player.position), { 1, 0 });
+		float angleB = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityArr[k]->face1.b, player.position), { 1, 0 });
 		if (angleA < angleB)
 			angleB -= 360;
 
 		bool draw = true;
-		SDL_FRect rect = { entityArr[k].face2.b.x, entityArr[k].face2.a.y, 0, entityArr[k].face2.b.y - entityArr[k].face2.a.y };
+		SDL_FRect rect = { entityArr[k]->face2.b.x, entityArr[k]->face2.a.y, 0, entityArr[k]->face2.b.y - entityArr[k]->face2.a.y };
 		for (float angle = angleB; angle <= angleA; angle += rayPrecision)
 		{
 			SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, player.position, angle), player.position)), viewDistance);
@@ -166,33 +166,33 @@ void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* 
 			else
 			{
 				if (rect.w > 0)
-					renderImage(entityArr[k].sprite, fullRect, rect);
+					renderImage(entityArr[k]->sprite, fullRect, rect);
 				rect.x += rect.w;
 				rect.w = 0;
 			}
 		}
 		if (rect.w > 0)
-			renderImage(entityArr[k].sprite, fullRect, rect);
+			renderImage(entityArr[k]->sprite, fullRect, rect);
 	}
 }
 
 //???
-static void ZHIR_swapEntity(Entity& firstVariable, Entity& secondVariable)
+static void ZHIR_swapEntity(Entity*& firstVariable, Entity*& secondVariable)
 {
-	Entity tempAdress = firstVariable;
+	Entity* tempAdress = firstVariable;
 	firstVariable = secondVariable;
 	secondVariable = tempAdress;
 }
 
-void enemyPreRender(Entity* entityArr, int entityArrSize)
+void enemyPreRender(Entity** entityArr, int entityArrSize)
 {
 	//array sort (bubble)
 	//???
 	for (int i = 0; i < entityArrSize - 1; i++)
 		for (int j = 0; j < entityArrSize - 1; j++)
 		{
-			float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i].position, player.position));
-			float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1].position, player.position));
+			float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i]->position, player.position));
+			float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1]->position, player.position));
 			if (len1 < len2)
 			{
 				ZHIR_swapEntity(entityArr[i], entityArr[i + 1]);
@@ -203,13 +203,13 @@ void enemyPreRender(Entity* entityArr, int entityArrSize)
 	for (int i = 0; i < entityArrSize; i++)
 	{
 		//face1 compute
-		SDL_FPoint entityFlatPoint1 = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i].position, player.position), { 0,0 }, 90)), entityArr[i].radius));
-		SDL_FPoint entityFlatPoint2 = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i].position, player.position), { 0,0 }, -90)), entityArr[i].radius));
-		entityArr[i].face1 = { entityFlatPoint1 , entityFlatPoint2 };
+		SDL_FPoint entityFlatPoint1 = ZHIR_vecSumF(entityArr[i]->position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i]->position, player.position), { 0,0 }, 90)), entityArr[i]->radius));
+		SDL_FPoint entityFlatPoint2 = ZHIR_vecSumF(entityArr[i]->position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i]->position, player.position), { 0,0 }, -90)), entityArr[i]->radius));
+		entityArr[i]->face1 = { entityFlatPoint1 , entityFlatPoint2 };
 
 		//face2.a compute (pay attention to size)
 		float distance1 = ZHIR_vecLengthF(ZHIR_vecSubF(player.position, entityFlatPoint1));
-		float size1 = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * (2 * entityArr[i].vertSize - wallSize) / distance1;
+		float size1 = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * (2 * entityArr[i]->vertSize - wallSize) / distance1;
 		float angle1 = ZHIR_vecFindAngleFullF(ZHIR_vecSubF(entityFlatPoint1, player.position), { 1, 0 });
 		float nAngle1 = angle1 - player.lFOV;
 		if (nAngle1 < 0)
@@ -232,7 +232,7 @@ void enemyPreRender(Entity* entityArr, int entityArrSize)
 		// this ifs section looks idk
 		float x2 = WIN_WIDTH * (nAngle2) / player.FOV;
 
-		entityArr[i].face2 = { {x1,size1}, {x2, WIN_HEIGHT - size2} };
+		entityArr[i]->face2 = { {x1,size1}, {x2, WIN_HEIGHT - size2} };
 		/*	SDL_RenderDrawLineF(ren, x1, size1, x2, size2);
 			SDL_RenderDrawLineF(ren, x1, size1, x1, WIN_HEIGHT - size1);
 			SDL_RenderDrawLineF(ren, x1, WIN_HEIGHT - size1, x2, WIN_HEIGHT - size2);

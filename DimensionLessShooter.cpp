@@ -5,9 +5,8 @@
 #include "Input.h"
 #include "EnemyBehavior.h"
 
-Entity enemy1;
-Entity enemy2;
-Entity* enemies;
+Entity* realEnemies;
+Entity** enemies;
 int enemiesAmount = 2;
 
 SDL_FPoint pf1;
@@ -55,36 +54,37 @@ void onStart()
 	};
 	SDL_FreeSurface(textureSurface1);
 
-	enemies = (Entity*)malloc(sizeof(Entity) * enemiesAmount);
+	realEnemies = (Entity*)malloc(sizeof(Entity) * enemiesAmount);
+	enemies = (Entity**)malloc(sizeof(Entity*) * enemiesAmount);
 
 	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
 
 
-	enemy1.sprite = &sprite1;
-	enemy2.sprite = &sprite1;
+	realEnemies[0].sprite = &sprite1;
+	realEnemies[1].sprite = &sprite1;
 
-	enemy1.accel = 4000;
-	enemy1.speedLimit = 5000;
-	enemy1.type = RUNNER;
-	enemy1.position = { 250, 250 };
-	enemy1.speed = 600;
-	enemy1.friction = 2000;
-	enemy1.radius = 200;
-	enemy1.vertSize = 400;
-	//enemy1.radius = enemy1.sprite->w / 2;
-	//enemy1.vertSize = enemy1.sprite->h;
+	realEnemies[0].accel = 4000;
+	realEnemies[0].speedLimit = 5000;
+	realEnemies[0].type = RUNNER;
+	realEnemies[0].position = { 250, 250 };
+	realEnemies[0].speed = 600;
+	realEnemies[0].friction = 2000;
+	realEnemies[0].radius = 200;
+	realEnemies[0].vertSize = 400;
+	//realEnemies[0].radius = realEnemies[0].sprite->w / 2;
+	//realEnemies[0].vertSize = realEnemies[0].sprite->h;
 
-	enemy2.accel = 10000;
-	enemy2.speedLimit = 1000;
-	enemy2.type = SHOOTER;
-	enemy2.position = { 500, 250 };
-	enemy2.speed = 300;
-	enemy2.friction = 6000;
-	enemy2.radius = 100;
-	enemy2.vertSize = wallSize / 2;
+	realEnemies[1].accel = 10000;
+	realEnemies[1].speedLimit = 1000;
+	realEnemies[1].type = SHOOTER;
+	realEnemies[1].position = { 500, 250 };
+	realEnemies[1].speed = 300;
+	realEnemies[1].friction = 6000;
+	realEnemies[1].radius = 100;
+	realEnemies[1].vertSize = wallSize / 2;
 
-	enemies[0] = enemy1;
-	enemies[1] = enemy2;
+	enemies[0] = &realEnemies[0];
+	enemies[1] = &realEnemies[1];
 
 	pf1 = { WIN_CENTER.x + 200.0f, (float)WIN_CENTER.y + 100 };
 	pf2 = { WIN_CENTER.x - 200.0f, (float)WIN_CENTER.y };

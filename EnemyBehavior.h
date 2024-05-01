@@ -6,6 +6,6 @@
 #include "Structs.h"
 #include "Collision.h"
 
-void updateEnemies(Entity* entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize, float delta);
+void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize, float delta);
 
 #endif

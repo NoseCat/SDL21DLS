@@ -7,7 +7,7 @@
 
 void lineRender(const ZHIR_LineF* linesArr, int linesArrSize);
 void renderImage(const Sprite* sprite, const SDL_FRect& fullRect, const SDL_FRect& cutRect);
-void entityRender(const Entity* entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize);
-void enemyPreRender(Entity* entityArr, int entityArrSize);
+void entityRender(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize);
+void enemyPreRender(Entity** entityArr, int entityArrSize);
 
 #endif
