@@ -41,6 +41,21 @@ int main(int argc, char* argv[])
 				MousePosRel.x = ev.motion.xrel;
 				MousePosRel.y = ev.motion.yrel;
 				break;
+
+			case SDL_MOUSEBUTTONDOWN:
+				if (ev.button.button == SDL_BUTTON_RIGHT)
+					input_RMB = true;
+				if (ev.button.button == SDL_BUTTON_LEFT)
+					input_LMB = true;
+				break;
+
+			case SDL_MOUSEBUTTONUP:
+				if (ev.button.button == SDL_BUTTON_RIGHT)
+					input_RMB = false;
+				if (ev.button.button == SDL_BUTTON_LEFT)
+					input_LMB = false;
+				break;
+
 			case SDL_KEYDOWN:
 				switch (ev.key.keysym.scancode)
 				{

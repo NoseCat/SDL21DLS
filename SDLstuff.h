@@ -182,6 +182,13 @@ void ZHIR_drawCircleF(const SDL_FPoint& center, const float r);
 
 //–исует триугольник на трех точках
 void ZHIR_drawTriangle(const SDL_Point& p1, const SDL_Point& p2, const SDL_Point& p3);
+
+//–исует линию использу€ ZHIR_Line
+void ZHIR_drawLine(const ZHIR_Line& line);
+void ZHIR_drawLineF(const ZHIR_LineF& line);
+
+void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec);
+
 #pragma endregion //Draw
 
 #endif

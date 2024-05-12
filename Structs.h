@@ -10,7 +10,7 @@
 
 struct Player 
 {
-	SDL_FPoint position = { 0,0 };
+	SDL_FPoint position = { 1500, -150 };
 	float radius = 150; //player size
 	SDL_FPoint speedVec = { 0,0 };
 	float speed = 0;
@@ -31,14 +31,14 @@ struct Sprite
 	int h;
 };
 
-enum EnemyTypes { RUNNER, SHOOTER };
+enum EnemyTypes { EMPTY, RUNNER, SHOOTER, BULLET };
 
 struct Entity
 {
 	int type;
 
 	float radius = 100;
-	SDL_FPoint position;
+	SDL_FPoint position = { 0,0 };
 	float friction = 1000;
 	SDL_FPoint dir = { 1, 0 };
 	float speed = 0;
@@ -62,14 +62,20 @@ struct Entity
 
 #pragma region GLOBAL
 
+//sprites
+extern Sprite sprite1;
+extern Sprite BulletSprite;
+
 extern Player player;
 
+//settings
 extern float mouseSensetivity;
 extern float rayPrecision;
 extern float wallSize;
 extern float viewDistance;
 extern float aerialFactor;
 extern float aerialLowerBorder;
+extern int collisionPrecision;
 
 #pragma endregion //GLOBAL
 

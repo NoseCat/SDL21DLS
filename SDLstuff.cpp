@@ -499,4 +499,30 @@ void ZHIR_drawTriangle(const SDL_Point& p1, const SDL_Point& p2, const SDL_Point
 	SDL_RenderDrawLine(ren, p2.x, p2.y, p3.x, p3.y);
 }
 
+//Рисует линию используя ZHIR_Line
+void ZHIR_drawLine(const ZHIR_Line& line)
+{
+	SDL_RenderDrawLine(ren, line.a.x, line.a.y, line.b.x, line.b.y);
+}
+void ZHIR_drawLineF(const ZHIR_LineF& line)
+{
+	SDL_RenderDrawLineF(ren, line.a.x, line.a.y, line.b.x, line.b.y);
+}
+
+//???
+void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec = 0.5f)
+{
+	SDL_FPoint normVec = ZHIR_vecNormal(ZHIR_vecSubF(line.a, line.b));
+	normVec = ZHIR_rotateOnDegreeF(normVec, { 0,0 }, 90);
+	ZHIR_LineF bold = line;
+	
+	float thick = 0;
+	float flip = -1;
+	for (int i = 0; i < thickness; i++, thick += prec, flip *= -1)
+	{
+		bold.a = ZHIR_vecSumF(line.a, ZHIR_vecMultF(normVec, thick * flip));
+		bold.b = ZHIR_vecSumF(line.b, ZHIR_vecMultF(normVec, thick * flip));
+		ZHIR_drawLineF(bold);
+	}
+}
 #pragma endregion //Draw

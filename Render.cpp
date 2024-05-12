@@ -124,6 +124,9 @@ void entityRender(Entity** entityArr, int entityArrSize, const ZHIR_LineF* lines
 
 	for (int k = 0; k < entityArrSize; k++)
 	{
+		if (entityArr[k]->type == EMPTY)
+			continue;
+
 		float distToEnt = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[k]->position, player.position));
 		if (distToEnt > viewDistance)
 			continue;
@@ -187,10 +190,10 @@ static void ZHIR_swapEntity(Entity*& firstVariable, Entity*& secondVariable)
 void enemyPreRender(Entity** entityArr, int entityArrSize)
 {
 	//array sort (bubble)
-	//???
 	for (int i = 0; i < entityArrSize - 1; i++)
-		for (int j = 0; j < entityArrSize - 1; j++)
+		for (int j = 0; j < entityArrSize - 1; j++) // ?
 		{
+			//pos fix pls
 			float len1 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i]->position, player.position));
 			float len2 = ZHIR_vecLengthF(ZHIR_vecSubF(entityArr[i + 1]->position, player.position));
 			if (len1 < len2)
@@ -202,6 +205,9 @@ void enemyPreRender(Entity** entityArr, int entityArrSize)
 	//faces computation
 	for (int i = 0; i < entityArrSize; i++)
 	{
+		if (entityArr[i]->type == EMPTY)
+			continue;
+
 		//face1 compute
 		SDL_FPoint entityFlatPoint1 = ZHIR_vecSumF(entityArr[i]->position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i]->position, player.position), { 0,0 }, 90)), entityArr[i]->radius));
 		SDL_FPoint entityFlatPoint2 = ZHIR_vecSumF(entityArr[i]->position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_rotateOnDegreeF(ZHIR_vecSubF(entityArr[i]->position, player.position), { 0,0 }, -90)), entityArr[i]->radius));
@@ -238,4 +244,70 @@ void enemyPreRender(Entity** entityArr, int entityArrSize)
 			SDL_RenderDrawLineF(ren, x1, WIN_HEIGHT - size1, x2, WIN_HEIGHT - size2);
 			SDL_RenderDrawLineF(ren, x2, size2, x2, WIN_HEIGHT - size2);*/
 	}
+}
+
+float smkSize = 50;
+
+void smokeRender(const ZHIR_LineF* smklines, int smklinesSize, const ZHIR_LineF* linesArr, int linesArrSize)
+{
+	//initializtion
+	SDL_FPoint unitVec = ZHIR_vecSumF(player.position, { 1,0 });
+	int numPoints = (int)(smklinesSize * player.FOV / rayPrecision) + 1;
+	SDL_FPoint* linePoints = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * numPoints);
+	for (int i = 0; i < numPoints; i++)
+	{
+		linePoints[i] = { -1, -1 };
+	}
+
+	//compute cycle
+	numPoints = 0;
+	for (float angle = player.lFOV; angle <= player.hFOV; angle += rayPrecision)
+	{
+		SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, player.position, angle), player.position)), viewDistance);
+		ray = ZHIR_vecSumF(ray, player.position);
+		//SDL_RenderDrawLineF(ren, player.position.x, playerPosition.y, ray.x, ray.y);
+		for (int i = 0; i < smklinesSize; i++)
+		{
+			if (ZHIR_vecLengthF(ZHIR_vecSubF(smklines[i].a, smklines[i].b)) <= 0)
+				continue;
+
+			float distance = 0;
+			if (ZHIR_isIntersectF({ player.position, ray }, smklines[i]))
+			{
+				distance = ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, smklines[i]), player.position));
+				bool vis = true;
+
+				for(int j = 0; j < linesArrSize; j++)
+				{
+					if (ZHIR_isIntersectF({ player.position, ray }, linesArr[j]) &&
+						ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, linesArr[j]), player.position)) < distance)
+					{
+						vis = false;
+					}
+				}
+				if (vis)
+				{
+					float size = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * smkSize / distance;
+					float x = WIN_WIDTH * (angle - player.lFOV) / player.FOV;
+					linePoints[numPoints] = { x,  size };
+				}
+			}
+		}
+		numPoints++;
+	}
+
+	//render cycle
+	for (int i = 0; i < numPoints - 1; i++)
+	{
+		if (linePoints[i].y != -1 && linePoints[i].x != -1 && linePoints[i + 1].y != -1 && linePoints[i + 1].x != -1)
+		{
+			SDL_SetRenderDrawColor(ren, 150, 50, 50, 150);
+			//SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i + 1].y);
+			SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
+			/*ZHIR_LineF line = { {linePoints[i].x, WIN_HEIGHT - linePoints[i].y }, {linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y} };
+			ZHIR_drawLineBoldF(line, 4, 0.3);*/
+		}
+	}
+
+	free(linePoints);
 }

@@ -5,9 +5,11 @@
 #include "Input.h"
 #include "EnemyBehavior.h"
 
-Entity* realEnemies;
-Entity** enemies;
+Entity* realEntities;
+Entity** entities;
 int enemiesAmount = 2;
+int bulletBuffer = 10;
+int totalEntities = enemiesAmount + bulletBuffer;
 
 SDL_FPoint pf1;
 SDL_FPoint pf2;
@@ -25,6 +27,7 @@ ZHIR_LineF* lines;
 int linesSize = 7;
 
 Sprite sprite1;
+Sprite BulletSprite;
 
 //player global values
 Player player;
@@ -36,6 +39,11 @@ float wallSize = 500.0f; //affects visual vertical wall size
 float viewDistance = 20000.0f;
 float aerialFactor = 1.5f; //keep around 1~2. affects how far you need to be for lines to start getting thinner
 float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
+int collisionPrecision = 15;
+
+//ZHIR_LineF* smkLines;
+//int smkLinesSize = 1;
+//int smkBounces = 5;
 
 void onStart()
 {
@@ -54,37 +62,62 @@ void onStart()
 	};
 	SDL_FreeSurface(textureSurface1);
 
-	realEnemies = (Entity*)malloc(sizeof(Entity) * enemiesAmount);
-	enemies = (Entity**)malloc(sizeof(Entity*) * enemiesAmount);
+	SDL_Surface* textureSurfaceBullet = IMG_Load("bullet.png");
+	if (textureSurfaceBullet == NULL)
+	{
+		printf("\nbullet wrong\n");
+		system("pause");
+		exit(1);
+	}
+	BulletSprite =
+	{
+		SDL_CreateTextureFromSurface(ren, textureSurfaceBullet),
+		textureSurfaceBullet->w,
+		textureSurfaceBullet->h
+	};
+	SDL_FreeSurface(textureSurface1);
+
+	realEntities = (Entity*)malloc(sizeof(Entity) * totalEntities);
+	for (int i = 0; i < totalEntities; i++)
+		realEntities[i].type = EMPTY;
+	entities = (Entity**)malloc(sizeof(Entity*) * totalEntities);
+	for (int i = 0; i < totalEntities; i++)
+		entities[i] = &realEntities[i];
 
 	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
 
+	/*smkLines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * smkLinesSize * smkBounces);
+	for (int i = 0; i < smkLinesSize; i++)
+		smkLines[i] = { -1,-1 };
 
-	realEnemies[0].sprite = &sprite1;
-	realEnemies[1].sprite = &sprite1;
+	smkLines[0] = { { 4000, 0 }, { 0, 4000 } };
+	smkLineBounce(smkLines[0], smkBounces, 0, smkLines, lines, linesSize);*/
 
-	realEnemies[0].accel = 4000;
-	realEnemies[0].speedLimit = 5000;
-	realEnemies[0].type = RUNNER;
-	realEnemies[0].position = { 250, 250 };
-	realEnemies[0].speed = 600;
-	realEnemies[0].friction = 2000;
-	realEnemies[0].radius = 200;
-	realEnemies[0].vertSize = 400;
-	//realEnemies[0].radius = realEnemies[0].sprite->w / 2;
-	//realEnemies[0].vertSize = realEnemies[0].sprite->h;
+	realEntities[0].sprite = &sprite1;
+	realEntities[1].sprite = &sprite1;
 
-	realEnemies[1].accel = 10000;
-	realEnemies[1].speedLimit = 1000;
-	realEnemies[1].type = SHOOTER;
-	realEnemies[1].position = { 500, 250 };
-	realEnemies[1].speed = 300;
-	realEnemies[1].friction = 6000;
-	realEnemies[1].radius = 100;
-	realEnemies[1].vertSize = wallSize / 2;
+	realEntities[0].accel = 4000;
+	realEntities[0].speedLimit = 5000;
+	realEntities[0].type = RUNNER;
+	realEntities[0].position = { 250, 250 };
+	realEntities[0].speed = 600;
+	realEntities[0].friction = 2000;
+	realEntities[0].radius = 200;
+	realEntities[0].vertSize = 400;
+	//realEntities[0].radius = realEntities[0].sprite->w / 2;
+	//realEntities[0].vertSize = realEntities[0].sprite->h;
 
-	enemies[0] = &realEnemies[0];
-	enemies[1] = &realEnemies[1];
+	realEntities[1].accel = 10000;
+	realEntities[1].speedLimit = 1000;
+	realEntities[1].type = SHOOTER;
+	realEntities[1].position = { 500, 250 };
+	realEntities[1].speed = 300;
+	realEntities[1].friction = 6000;
+	realEntities[1].radius = 100;
+	realEntities[1].vertSize = wallSize / 2;
+
+	entities[0] = &realEntities[0];
+	entities[1] = &realEntities[1];
 
 	pf1 = { WIN_CENTER.x + 200.0f, (float)WIN_CENTER.y + 100 };
 	pf2 = { WIN_CENTER.x - 200.0f, (float)WIN_CENTER.y };
@@ -100,7 +133,7 @@ void onStart()
 	line4 = { {150, 50}, {150, 150} };
 	line5 = { {150, 150}, {50, 150} };
 	line6 = { {50, 150}, {50, 50} };
-	line7 = { {1000, 1000}, {5000, 5000} };
+	line7 = { {1000, 1000}, {4500, 5000} };
 
 	lines[0] = line1;
 	lines[1] = line2;
@@ -112,9 +145,11 @@ void onStart()
 	lines[6] = line7;
 }
 
-
 void eachFrame(float delta)
 {
+	//printf("%f\n", delta);
+	//system("cls");
+
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 	inputUpdate();
 	player.lFOV += MousePosRel.x * mouseSensetivity * delta;
@@ -130,7 +165,7 @@ void eachFrame(float delta)
 	/*for (int i = 0; i < linesSize; i++)
 		SDL_RenderDrawLineF(ren, lines[i].a.x, lines[i].a.y, lines[i].b.x, lines[i].b.y);
 	for (int i = 0; i < enemiesAmount; i++)
-		SDL_RenderDrawLineF(ren, enemies[i].face1.a.x, enemies[i].face1.a.y, enemies[i].face1.b.x, enemies[i].face1.b.y);*/
+		SDL_RenderDrawLineF(ren, entities[i].face1.a.x, entities[i].face1.a.y, entities[i].face1.b.x, entities[i].face1.b.y);*/
 
 	player.accelVec = ZHIR_vecMultF(ZHIR_rotateOnDegreeF(InputDir, { 0,0 }, player.lFOV + 180 - player.FOV / 2), player.accel);
 	player.accelVec = ZHIR_vecSumF(player.accelVec, ZHIR_vecMultF(ZHIR_vecNormal(player.speedVec), -player.friction));
@@ -140,23 +175,31 @@ void eachFrame(float delta)
 	if (player.speed < 150)
 		player.speed = 0;
 	player.speedVec = ZHIR_vecMultF(ZHIR_vecNormal(player.speedVec), player.speed);
-	//player.speedVec = ZHIR_vecMultF(ZHIR_rotateOnDegreeF(InputDir, { 0,0 }, player.lFOV + 180 - player.FOV / 2), player.speed * delta);
+	/*player.speedVec = ZHIR_vecMultF(ZHIR_rotateOnDegreeF(InputDir, { 0,0 }, player.lFOV + 180 - player.FOV / 2), player.speed * delta);
+	SDL_FPoint newPosition = ZHIR_vecSumF(player.position, player.speedVec);*/
 	SDL_FPoint newPosition = ZHIR_vecSumF(player.position, ZHIR_vecMultF(player.speedVec, delta));
 
-	/*if (ZHIR_vecLengthF(ZHIR_vecMultF(player.speedVec, delta)) >= player.radius)
-		printf("!!!!\n");*/
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(newPosition, player.position)) >= player.radius / 2)
+		printf("too fast!!!\n");
 
 	for (int i = 0; i < linesSize; i++)
-		lineCollide(lines[i], newPosition, player.radius);
+		newPosition = lineCollideIterations(lines[i], player.position, newPosition, player.radius, collisionPrecision);
 	player.position = newPosition;
 
-	updateEnemies(enemies, enemiesAmount, lines, linesSize, delta);
+	if (input_LMB)
+		spawnBullet( realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, player.lFOV + 180 - player.FOV / 2));
 
-	enemyPreRender(enemies, enemiesAmount);
+	//entityAssemble(entities, realEntities, enemiesAmount, bulletBuffer);
+
+	updateEnemies(entities, totalEntities, lines, linesSize, delta);
+
+	enemyPreRender(entities, totalEntities);
 
 	lineRender(lines, linesSize);
 
-	entityRender(enemies, enemiesAmount, lines, linesSize);
+	//smokeRender(smkLines, smkLinesSize, lines, linesSize);
+
+	entityRender(entities, totalEntities, lines, linesSize);
 
 	//ZHIR_drawCircleF(playerPosition, radius);
 }
@@ -164,6 +207,7 @@ void eachFrame(float delta)
 void onEnd()
 {
 	free(lines);
-	free(enemies);
+	free(realEntities);
+	free(entities);
 	SDL_DestroyTexture(sprite1.texture);
 }
