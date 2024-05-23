@@ -19,6 +19,10 @@ struct Player
 	SDL_FPoint accelVec = { 0,0 };
 	float accel = 10000 + friction;
 
+	int health = 100;
+	int bulletDamage = 20;
+	Timer shotDelay = { true,  1 };
+
 	float FOV = 90;
 	float lFOV = 45 + 180;
 	float hFOV = lFOV + FOV;
@@ -46,6 +50,8 @@ struct Entity
 	float speedLimit = 2500;
 	float accel = 2000;
 	SDL_FPoint accelVec = { 0,0 };
+
+	int health = 100;
 
 	Sprite* sprite;
 	//real position of sprite

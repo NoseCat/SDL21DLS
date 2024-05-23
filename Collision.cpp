@@ -39,15 +39,52 @@
 //	}
 //}
 
-SDL_FPoint circleCollide(const SDL_FPoint& circPos, float circRadius, SDL_FPoint& newPos, float radius)
+#pragma region CircleCircle
+
+bool isCircleCircleCollide(const SDL_FPoint& constCircPos, float circRadius, const SDL_FPoint& point, float radius)
 {
-	if (ZHIR_vecLengthF(ZHIR_vecSubF(circPos, newPos)) <= circRadius + radius)
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(constCircPos, point)) <= circRadius + radius)
 	{
-		newPos = ZHIR_vecSumF(circPos, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, circPos)), circRadius + radius));
-		return ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, circPos)), circRadius + radius);
+		return true;
 	}
-	return { 0,0 };
+	return false;
 }
+
+SDL_FPoint circleCircleCollide(const SDL_FPoint& constCircPos, float circRadius, const SDL_FPoint& point, float radius, bool &collided)
+{
+	SDL_FPoint newPos = point;
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(constCircPos, newPos)) <= circRadius + radius)
+	{
+		collided = true;
+		newPos = ZHIR_vecSumF(constCircPos, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, constCircPos)), circRadius + radius));
+		return newPos;
+		//return ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, constCircPos)), circRadius + radius);
+	}
+	collided = false;
+	return newPos;
+}
+
+SDL_FPoint circleCircleCollideIterations(const SDL_FPoint& constCircPos, float circRadius, const SDL_FPoint& oldPos, SDL_FPoint newPos, float radius, int iterations, bool& collided)
+{
+	float fracLen = ZHIR_vecLengthF(ZHIR_vecSubF(newPos, oldPos)) / iterations;
+	SDL_FPoint vecNorm = ZHIR_vecNormal(ZHIR_vecSubF(newPos, oldPos));
+
+	SDL_FPoint tempPos = newPos;
+	for (int i = 0; i < iterations; i++)
+	{
+		tempPos = ZHIR_vecSubF(tempPos, ZHIR_vecMultF(vecNorm, fracLen));
+		if (isCircleCircleCollide(constCircPos, circRadius, tempPos, radius))
+		{
+			return circleCircleCollide(constCircPos, circRadius, tempPos, radius, collided);
+		}
+	}
+	collided = false;
+	return newPos;
+}
+
+#pragma endregion //CircleCircle
+
+#pragma region LineCircle
 
 bool isLineCircleCollide(const ZHIR_LineF& line, const SDL_FPoint& point, float radius)
 {
@@ -62,29 +99,36 @@ bool isLineCircleCollide(const ZHIR_LineF& line, const SDL_FPoint& point, float 
 	return false;
 }
 
-SDL_FPoint lineCollide(const ZHIR_LineF& line, const SDL_FPoint& point, float radius)
+SDL_FPoint lineCircleCollide(const ZHIR_LineF& line, const SDL_FPoint& point, float radius, bool& collided)
 {
 	SDL_FPoint newPos = point;
 	SDL_FPoint proj = ZHIR_dotProjLineF(line, newPos);
 	if (ZHIR_vecLengthF(ZHIR_vecSubF(proj, newPos)) < radius && ZHIR_isOnLineF(line, proj))
 	{
+		collided = true;
 		newPos = ZHIR_vecSumF(proj, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, proj)), radius));
+		return newPos;
 		//collision = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, proj)), radius);
 	}
 	if (ZHIR_vecLengthF(ZHIR_vecSubF(line.a, newPos)) < radius)
 	{
+		collided = true;
 		newPos = ZHIR_vecSumF(line.a, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.a)), radius));
+		return newPos;
 		//collision = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.a)), radius);
 	}
 	if (ZHIR_vecLengthF(ZHIR_vecSubF(line.b, newPos)) < radius)
 	{
+		collided = true;
 		newPos = ZHIR_vecSumF(line.b, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.b)), radius));
+		return newPos;
 		//collision = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(newPos, line.b)), radius);
 	}
+	collided = false;
 	return newPos;
 }
 
-SDL_FPoint lineCollideIterations(const ZHIR_LineF& line, const SDL_FPoint& oldPos, SDL_FPoint newPos, float radius, int iterations)
+SDL_FPoint lineCircleCollideIterations(const ZHIR_LineF& line, const SDL_FPoint& oldPos, SDL_FPoint newPos, float radius, int iterations, bool& collided)
 {
 	float fracLen = ZHIR_vecLengthF(ZHIR_vecSubF(newPos, oldPos)) / iterations;
 	SDL_FPoint vecNorm = ZHIR_vecNormal(ZHIR_vecSubF(newPos, oldPos));
@@ -95,8 +139,11 @@ SDL_FPoint lineCollideIterations(const ZHIR_LineF& line, const SDL_FPoint& oldPo
 		tempPos = ZHIR_vecSubF(tempPos, ZHIR_vecMultF(vecNorm, fracLen));
 		if (isLineCircleCollide(line, tempPos, radius))
 		{
-			return lineCollide(line, tempPos, radius);
+			return lineCircleCollide(line, tempPos, radius, collided);
 		}
 	}
+	collided = false;
 	return newPos;
 }
+
+#pragma endregion //LineCircle

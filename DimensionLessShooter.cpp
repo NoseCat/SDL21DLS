@@ -8,7 +8,7 @@
 Entity* realEntities;
 Entity** entities;
 int enemiesAmount = 2;
-int bulletBuffer = 10;
+int bulletBuffer = 100;
 int totalEntities = enemiesAmount + bulletBuffer;
 
 SDL_FPoint pf1;
@@ -96,6 +96,7 @@ void onStart()
 	realEntities[0].sprite = &sprite1;
 	realEntities[1].sprite = &sprite1;
 
+	realEntities[0].health = 100;
 	realEntities[0].accel = 4000;
 	realEntities[0].speedLimit = 5000;
 	realEntities[0].type = RUNNER;
@@ -107,6 +108,7 @@ void onStart()
 	//realEntities[0].radius = realEntities[0].sprite->w / 2;
 	//realEntities[0].vertSize = realEntities[0].sprite->h;
 
+	realEntities[1].health = 50;
 	realEntities[1].accel = 10000;
 	realEntities[1].speedLimit = 1000;
 	realEntities[1].type = SHOOTER;
@@ -115,9 +117,6 @@ void onStart()
 	realEntities[1].friction = 6000;
 	realEntities[1].radius = 100;
 	realEntities[1].vertSize = wallSize / 2;
-
-	entities[0] = &realEntities[0];
-	entities[1] = &realEntities[1];
 
 	pf1 = { WIN_CENTER.x + 200.0f, (float)WIN_CENTER.y + 100 };
 	pf2 = { WIN_CENTER.x - 200.0f, (float)WIN_CENTER.y };
@@ -179,15 +178,35 @@ void eachFrame(float delta)
 	SDL_FPoint newPosition = ZHIR_vecSumF(player.position, player.speedVec);*/
 	SDL_FPoint newPosition = ZHIR_vecSumF(player.position, ZHIR_vecMultF(player.speedVec, delta));
 
-	if (ZHIR_vecLengthF(ZHIR_vecSubF(newPosition, player.position)) >= player.radius / 2)
-		printf("too fast!!!\n");
+	//if (ZHIR_vecLengthF(ZHIR_vecSubF(newPosition, player.position)) >= player.radius / 2)
+	//	printf("too fast!!!\n");
 
+	bool iDontCare = true;
 	for (int i = 0; i < linesSize; i++)
-		newPosition = lineCollideIterations(lines[i], player.position, newPosition, player.radius, collisionPrecision);
+		newPosition = lineCircleCollideIterations(lines[i], player.position, newPosition, player.radius, collisionPrecision, iDontCare);
 	player.position = newPosition;
 
-	if (input_LMB)
-		spawnBullet( realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, player.lFOV + 180 - player.FOV / 2));
+	if (input_LMB && input_RMB && !player.shotDelay.active)
+	{
+		SDL_FPoint rayCast = ZHIR_vecSumF(player.position, ZHIR_rotateOnDegreeF({ 0, -viewDistance }, { 0,0 }, player.lFOV + 180 - player.FOV / 2));
+		SDL_RenderDrawLine(ren, WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2, WIN_HEIGHT);
+		for (int i = 0; i < totalEntities; i++)
+		{
+			if ((entities[i]->type == RUNNER || entities[i]->type == SHOOTER) && ZHIR_isIntersectF(entities[i]->face1, { player.position, rayCast }))
+				entities[i]->health -= 2 * player.bulletDamage;
+		}
+		player.shotDelay.active = true;
+		player.shotDelay.time = 1;
+	}
+	if (input_LMB && !player.shotDelay.active)
+	{
+		spawnBullet(realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, player.lFOV + 180 - player.FOV / 2));
+		spawnBullet(realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, 15 + player.lFOV + 180 - player.FOV / 2));
+		spawnBullet(realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, -15 + player.lFOV + 180 - player.FOV / 2));
+		player.shotDelay.active = true;
+		player.shotDelay.time = 1;
+	}
+	ZHIR_timerTickDown(player.shotDelay, delta);
 
 	//entityAssemble(entities, realEntities, enemiesAmount, bulletBuffer);
 

@@ -191,4 +191,17 @@ void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec);
 
 #pragma endregion //Draw
 
+#pragma region Timer
+
+struct Timer
+{
+	bool active = false;
+	float time;
+};
+
+//Возвращает правду только в момент когда кончилось время
+bool ZHIR_timerTickDown(Timer& timer, float delta);
+
+#pragma endregion //Timer
+
 #endif
