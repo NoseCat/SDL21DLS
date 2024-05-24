@@ -15,6 +15,7 @@ int main(int argc, char* argv[])
 	GameState = MENU;
 
 	globalOnStart();
+	//onStart();
 
 	while (RUN)
 	{
@@ -135,7 +136,7 @@ int main(int argc, char* argv[])
 		SDL_RenderClear(ren);
 	}
 
-	//onEnd();
+	onEnd();
 
 	deInit(0);
 	return 0;
