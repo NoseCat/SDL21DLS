@@ -204,4 +204,17 @@ bool ZHIR_timerTickDown(Timer& timer, float delta);
 
 #pragma endregion //Timer
 
+#pragma region Menu
+
+struct Button
+{
+	SDL_Rect rect;
+	bool pressed = false;
+	SDL_Texture* textTexture;
+};
+
+bool ZHIR_pointInRect(const SDL_FPoint& p, const SDL_Rect& rect);
+
+#pragma endregion //Menu
+
 #endif

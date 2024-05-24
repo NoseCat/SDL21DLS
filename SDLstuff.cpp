@@ -546,3 +546,15 @@ bool ZHIR_timerTickDown(Timer& timer, float delta)
 }
 
 #pragma endregion //Timer
+
+#pragma region Menu
+
+bool ZHIR_pointInRect(const SDL_FPoint& p, const SDL_Rect& rect)
+{
+	if (p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h)
+		return true;
+
+	return false;
+}
+
+#pragma endregion //Menu

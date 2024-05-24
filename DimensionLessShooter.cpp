@@ -4,9 +4,10 @@
 #include "Collision.h"
 #include "Input.h"
 #include "EnemyBehavior.h"
+#include "mainblock.h"
 
-Entity* realEntities;
-Entity** entities;
+Entity* realEntities = nullptr;
+Entity** entities = nullptr;
 int enemiesAmount = 2;
 int bulletBuffer = 100;
 int totalEntities = enemiesAmount + bulletBuffer;
@@ -23,11 +24,13 @@ ZHIR_LineF line5;
 ZHIR_LineF line6;
 ZHIR_LineF line7;
 
-ZHIR_LineF* lines;
+ZHIR_LineF* lines = nullptr;
 int linesSize = 7;
 
 Sprite sprite1;
 Sprite BulletSprite;
+
+int GameState;
 
 //player global values
 Player player;
@@ -45,8 +48,36 @@ int collisionPrecision = 15;
 //int smkLinesSize = 1;
 //int smkBounces = 5;
 
+SDL_Rect startButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+SDL_Rect exitButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+Button startB = { startButton , false, nullptr};
+Button exitB = { exitButton , false , nullptr};
+void globalOnStart()
+{
+	TTF_Init();
+	TTF_Font* my_font = TTF_OpenFont("Text.ttf", 100);
+	SDL_Color fore_color = { 130,140,50 };
+	SDL_Color back_color = { 188,155,166 };
+
+	int startTsize = 20;
+	char* startT = (char*)malloc(sizeof(char)* startTsize);
+	//strcpy_s();
+	strcpy_s(startT, startTsize, "Play\0");
+	SDL_Surface* startButtonTextSurface = TTF_RenderText_Shaded(my_font, startT, fore_color, back_color);
+	startB.textTexture = SDL_CreateTextureFromSurface(ren, startButtonTextSurface);
+	SDL_FreeSurface(startButtonTextSurface);
+	free(startT);
+
+	//SDL_RenderCopy(renderer, texture, NULL, &rect);
+	//SDL_DestroyTexture(texture);
+	TTF_CloseFont(my_font);
+	TTF_Quit();
+}
+
 void onStart()
 {
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+
 	SDL_Surface* textureSurface1 = IMG_Load("NoseCat.png");
 	if (textureSurface1 == NULL)
 	{
@@ -221,6 +252,37 @@ void eachFrame(float delta)
 	entityRender(entities, totalEntities, lines, linesSize);
 
 	//ZHIR_drawCircleF(playerPosition, radius);
+}
+
+
+
+
+void ZHIR_updateButton(Button& button)
+{
+	SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+
+	SDL_RenderFillRect(ren, &button.rect);
+	SDL_Rect rect = { button.rect.x + button.rect.w / 4, button.rect.y + button.rect.h / 4, button.rect.w / 2, button.rect.h / 2 };
+	SDL_RenderCopy(ren, button.textTexture, NULL, &rect);
+
+	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+	if (input_LMB && ZHIR_pointInRect(MousePos, button.rect))
+		button.pressed = true;
+	else
+		button.pressed = false;
+}
+
+void mainMenuEachFrame()
+{
+	ZHIR_updateButton(startB);
+	ZHIR_updateButton(exitB);
+	if (startB.pressed)
+	{
+		onStart();
+		GameState = GAME;
+	}
+	if (exitB.pressed)
+		GameState = EXIT;
 }
 
 void onEnd()

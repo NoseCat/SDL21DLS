@@ -9,12 +9,12 @@ int main(int argc, char* argv[])
 	srand(time(0));
 	system("chcp 1251 > nul");
 	SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
-	SDL_SetRelativeMouseMode(SDL_TRUE);
 	float newtime = 0, lasttime = 0, delta = 1.0f / 1000;
 	bool RUN = true;
 	SDL_Event ev;
+	GameState = MENU;
 
-	onStart();
+	globalOnStart();
 
 	while (RUN)
 	{
@@ -111,14 +111,31 @@ int main(int argc, char* argv[])
 		}
 		lasttime = newtime;
 
-		eachFrame(delta);
+		switch (GameState)
+		{
+		case MENU:
+			mainMenuEachFrame();
+			break;
+		case GAME:
+			eachFrame(delta);
+			break;
+		case PAUSED:
+			break;
+		case LEVELSELECT:
+			break;
+		case EXIT:
+			RUN = false;
+			break;
+		default:
+			printf("gameState error\n");
+		}
 
 		SDL_RenderPresent(ren);
 		SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
 		SDL_RenderClear(ren);
 	}
 
-	onEnd();
+	//onEnd();
 
 	deInit(0);
 	return 0;
