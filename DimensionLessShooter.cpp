@@ -5,34 +5,8 @@
 #include "Input.h"
 #include "EnemyBehavior.h"
 #include "mainblock.h"
-
-Entity* realEntities = nullptr;
-Entity** entities = nullptr;
-int enemiesAmount = 2;
-int bulletBuffer = 100;
-int totalEntities = enemiesAmount + bulletBuffer;
-
-SDL_FPoint pf1;
-SDL_FPoint pf2;
-SDL_FPoint pf3;
-
-ZHIR_LineF line1;
-ZHIR_LineF line2;
-ZHIR_LineF line3;
-ZHIR_LineF line4;
-ZHIR_LineF line5;
-ZHIR_LineF line6;
-ZHIR_LineF line7;
-
-ZHIR_LineF* lines = nullptr;
-int linesSize = 7;
-
-Sprite sprite1;
-Sprite BulletSprite;
-
 int GameState;
 
-//player global values
 Player player;
 
 //settings
@@ -43,15 +17,73 @@ float viewDistance = 20000.0f;
 float aerialFactor = 1.5f; //keep around 1~2. affects how far you need to be for lines to start getting thinner
 float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
 int collisionPrecision = 15;
+int bulletBuffer = 50;
+
+Entity* realEntities = nullptr;
+Entity** entities = nullptr;
+int enemiesAmount = 0;
+int totalEntities = enemiesAmount + bulletBuffer;
+
+ZHIR_LineF* lines = nullptr;
+int linesSize = 0;
+//SDL_FPoint pf1;
+//SDL_FPoint pf2;
+//SDL_FPoint pf3;
+//
+//ZHIR_LineF line1;
+//ZHIR_LineF line2;
+//ZHIR_LineF line3;
+//ZHIR_LineF line4;
+//ZHIR_LineF line5;
+//ZHIR_LineF line6;
+//ZHIR_LineF line7;
 
 //ZHIR_LineF* smkLines;
 //int smkLinesSize = 1;
 //int smkBounces = 5;
 
+Sprite sprite1;
+Sprite BulletSprite;
+
 SDL_Rect startButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect exitButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-Button startB = { startButton , false, nullptr};
-Button exitB = { exitButton , false , nullptr};
+Button startB = { startButton , false, nullptr };
+Button exitB = { exitButton , false , nullptr };
+
+SDL_Rect level1Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+SDL_Rect level2Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+SDL_Rect level3Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6 + level1Button.x + level1Button.w, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+SDL_Rect customButton = { WIN_WIDTH / 4 - WIN_WIDTH / 6 + level1Button.x + level1Button.w, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+Button level1B = { level1Button , false, nullptr };
+Button level2B = { level2Button , false , nullptr };
+Button level3B = { level3Button , false, nullptr };
+Button customB = { customButton , false , nullptr };
+
+void texturefromtext(Button& button, const char* text, TTF_Font* my_font, SDL_Color fore_color, SDL_Color back_color)
+{
+	SDL_Surface* textSurface = TTF_RenderText_Shaded(my_font, text, fore_color, back_color);
+	button.textTexture = SDL_CreateTextureFromSurface(ren, textSurface);
+	SDL_FreeSurface(textSurface);
+}
+
+void spritefromimage(Sprite& sprite, const char* sprtname)
+{
+	SDL_Surface* textureSurface = IMG_Load(sprtname);
+	if (textureSurface == NULL)
+	{
+		printf("\nsprite load wrong\n");
+		system("pause");
+		exit(1);
+	}
+	sprite =
+	{
+		SDL_CreateTextureFromSurface(ren, textureSurface),
+		textureSurface->w,
+		textureSurface->h
+	};
+	SDL_FreeSurface(textureSurface);
+}
+
 void globalOnStart()
 {
 	TTF_Init();
@@ -59,120 +91,122 @@ void globalOnStart()
 	SDL_Color fore_color = { 130,140,50 };
 	SDL_Color back_color = { 188,155,166 };
 
-	int startTsize = 20;
-	char* startT = (char*)malloc(sizeof(char)* startTsize);
-	//strcpy_s();
-	strcpy_s(startT, startTsize, "Play\0");
-	SDL_Surface* startButtonTextSurface = TTF_RenderText_Shaded(my_font, startT, fore_color, back_color);
-	startB.textTexture = SDL_CreateTextureFromSurface(ren, startButtonTextSurface);
-	SDL_FreeSurface(startButtonTextSurface);
-	free(startT);
+	texturefromtext(startB, "play\0", my_font, fore_color, back_color);
+	texturefromtext(exitB, "exit\0", my_font, fore_color, back_color);
+
+	texturefromtext(level1B, "level 1\0", my_font, fore_color, back_color);
+	texturefromtext(level2B, "level 2\0", my_font, fore_color, back_color);
+	texturefromtext(level3B, "level 3\0", my_font, fore_color, back_color);
+	texturefromtext(customB, "custom\0", my_font, fore_color, back_color);
 
 	//SDL_RenderCopy(renderer, texture, NULL, &rect);
 	//SDL_DestroyTexture(texture);
 	TTF_CloseFont(my_font);
 	TTF_Quit();
+
+	spritefromimage(sprite1, "NoseCat.png");
+	spritefromimage(BulletSprite, "bullet.png");
 }
 
-void onStart()
+void onLevelStart(const char* levelname)
 {
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	SDL_Surface* textureSurface1 = IMG_Load("NoseCat.png");
-	if (textureSurface1 == NULL)
+	FILE* levelRead;
+	if (fopen_s(&levelRead, levelname, "rb") != 0)
 	{
-		printf("\n1 wrong\n");
-		system("pause");
+		printf("could not load the level");
 		exit(1);
 	}
-	sprite1 =
-	{
-		SDL_CreateTextureFromSurface(ren, textureSurface1),
-		textureSurface1->w,
-		textureSurface1->h
-	};
-	SDL_FreeSurface(textureSurface1);
 
-	SDL_Surface* textureSurfaceBullet = IMG_Load("bullet.png");
-	if (textureSurfaceBullet == NULL)
-	{
-		printf("\nbullet wrong\n");
-		system("pause");
-		exit(1);
-	}
-	BulletSprite =
-	{
-		SDL_CreateTextureFromSurface(ren, textureSurfaceBullet),
-		textureSurfaceBullet->w,
-		textureSurfaceBullet->h
-	};
-	SDL_FreeSurface(textureSurface1);
+	fread(&linesSize, sizeof(int), 1, levelRead);
+	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
+	fread(lines, sizeof(ZHIR_LineF), linesSize, levelRead);
 
-	realEntities = (Entity*)malloc(sizeof(Entity) * totalEntities);
+	fread(&enemiesAmount, sizeof(int), 1, levelRead);
+	realEntities = (Entity*)malloc(sizeof(Entity) * enemiesAmount);
+	fread(realEntities, sizeof(Entity), enemiesAmount, levelRead);
+
+	totalEntities = enemiesAmount + bulletBuffer;
+	realEntities = (Entity*)realloc(realEntities, sizeof(Entity) * totalEntities);
+
+	fclose(levelRead);
+
 	for (int i = 0; i < totalEntities; i++)
-		realEntities[i].type = EMPTY;
+	{
+		realEntities[i].sprite = &sprite1;
+	}
+	for (int i = 0; i < totalEntities; i++)
+	{
+		if (realEntities[i].type != SHOOTER && realEntities[i].type != RUNNER)
+		{
+			printf("%i\n", realEntities[i].type);
+			realEntities[i].type = EMPTY;
+		}
+	}
+	//realEntities[i].type = EMPTY;
 	entities = (Entity**)malloc(sizeof(Entity*) * totalEntities);
 	for (int i = 0; i < totalEntities; i++)
 		entities[i] = &realEntities[i];
 
-	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
+	//	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
 
-	/*smkLines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * smkLinesSize * smkBounces);
-	for (int i = 0; i < smkLinesSize; i++)
-		smkLines[i] = { -1,-1 };
+		/*smkLines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * smkLinesSize * smkBounces);
+		for (int i = 0; i < smkLinesSize; i++)
+			smkLines[i] = { -1,-1 };
 
-	smkLines[0] = { { 4000, 0 }, { 0, 4000 } };
-	smkLineBounce(smkLines[0], smkBounces, 0, smkLines, lines, linesSize);*/
+		smkLines[0] = { { 4000, 0 }, { 0, 4000 } };
+		smkLineBounce(smkLines[0], smkBounces, 0, smkLines, lines, linesSize);*/
 
-	realEntities[0].sprite = &sprite1;
-	realEntities[1].sprite = &sprite1;
+		//realEntities[0].sprite = &sprite1;
+		//realEntities[1].sprite = &sprite1;
 
-	realEntities[0].health = 100;
-	realEntities[0].accel = 4000;
-	realEntities[0].speedLimit = 5000;
-	realEntities[0].type = RUNNER;
-	realEntities[0].position = { 250, 250 };
-	realEntities[0].speed = 600;
-	realEntities[0].friction = 2000;
-	realEntities[0].radius = 200;
-	realEntities[0].vertSize = 400;
-	//realEntities[0].radius = realEntities[0].sprite->w / 2;
-	//realEntities[0].vertSize = realEntities[0].sprite->h;
+		//realEntities[0].health = 100;
+		//realEntities[0].accel = 4000;
+		//realEntities[0].speedLimit = 5000;
+		//realEntities[0].type = RUNNER;
+		//realEntities[0].position = { 250, 250 };
+		//realEntities[0].speed = 600;
+		//realEntities[0].friction = 2000;
+		//realEntities[0].radius = 200;
+		//realEntities[0].vertSize = 400;
+		//realEntities[0].radius = realEntities[0].sprite->w / 2;
+		//realEntities[0].vertSize = realEntities[0].sprite->h;
 
-	realEntities[1].health = 50;
-	realEntities[1].accel = 10000;
-	realEntities[1].speedLimit = 1000;
-	realEntities[1].type = SHOOTER;
-	realEntities[1].position = { 500, 250 };
-	realEntities[1].speed = 300;
-	realEntities[1].friction = 6000;
-	realEntities[1].radius = 100;
-	realEntities[1].vertSize = wallSize / 2;
+		//realEntities[1].health = 50;
+		//realEntities[1].accel = 10000;
+		//realEntities[1].speedLimit = 1000;
+		//realEntities[1].type = SHOOTER;
+		//realEntities[1].position = { 500, 250 };
+		//realEntities[1].speed = 300;
+		//realEntities[1].friction = 6000;
+		//realEntities[1].radius = 100;
+		//realEntities[1].vertSize = wallSize / 2;
 
-	pf1 = { WIN_CENTER.x + 200.0f, (float)WIN_CENTER.y + 100 };
-	pf2 = { WIN_CENTER.x - 200.0f, (float)WIN_CENTER.y };
-	pf3 = { WIN_CENTER.x + 200.0f, WIN_CENTER.y + 200.0f };
+		//pf1 = { WIN_CENTER.x + 200.0f, (float)WIN_CENTER.y + 100 };
+		//pf2 = { WIN_CENTER.x - 200.0f, (float)WIN_CENTER.y };
+		//pf3 = { WIN_CENTER.x + 200.0f, WIN_CENTER.y + 200.0f };
 
-	line1 = { pf1, pf2 };
-	line2 = { pf3, {(float)WIN_CENTER.x, (float)WIN_CENTER.y} };
+		//line1 = { pf1, pf2 };
+		//line2 = { pf3, {(float)WIN_CENTER.x, (float)WIN_CENTER.y} };
 
-	//line1 = { { 400,400}, { 400,400} };
-	//line2 = { { 400,400 }, { 400,400 } };
+		//line1 = { { 400,400}, { 400,400} };
+		//line2 = { { 400,400 }, { 400,400 } };
 
-	line3 = { {50, 50}, {150, 50} };
-	line4 = { {150, 50}, {150, 150} };
-	line5 = { {150, 150}, {50, 150} };
-	line6 = { {50, 150}, {50, 50} };
-	line7 = { {1000, 1000}, {4500, 5000} };
+		/*line3 = { {50, 50}, {150, 50} };
+		line4 = { {150, 50}, {150, 150} };
+		line5 = { {150, 150}, {50, 150} };
+		line6 = { {50, 150}, {50, 50} };
+		line7 = { {1000, 1000}, {4500, 5000} };
 
-	lines[0] = line1;
-	lines[1] = line2;
+		lines[0] = line1;
+		lines[1] = line2;
 
-	lines[2] = line3;
-	lines[3] = line4;
-	lines[4] = line5;
-	lines[5] = line6;
-	lines[6] = line7;
+		lines[2] = line3;
+		lines[3] = line4;
+		lines[4] = line5;
+		lines[5] = line6;
+		lines[6] = line7;*/
 }
 
 void eachFrame(float delta)
@@ -251,6 +285,8 @@ void eachFrame(float delta)
 
 	entityRender(entities, totalEntities, lines, linesSize);
 
+	minimap(lines, linesSize, entities, totalEntities);
+
 	//ZHIR_drawCircleF(playerPosition, radius);
 }
 
@@ -272,14 +308,28 @@ void ZHIR_updateButton(Button& button)
 		button.pressed = false;
 }
 
+void levelSelectEachFrame()
+{
+	ZHIR_updateButton(level1B);
+	ZHIR_updateButton(level2B);
+	ZHIR_updateButton(level3B);
+	ZHIR_updateButton(customB);
+	if (level1B.pressed)
+	{
+		//onStart();
+		onLevelStart("works1.bin");
+		GameState = GAME;
+	}
+}
+
 void mainMenuEachFrame()
 {
 	ZHIR_updateButton(startB);
 	ZHIR_updateButton(exitB);
 	if (startB.pressed)
 	{
-		onStart();
-		GameState = GAME;
+		//onStart();
+		GameState = LEVELSELECT;
 	}
 	if (exitB.pressed)
 		GameState = EXIT;
@@ -287,8 +337,17 @@ void mainMenuEachFrame()
 
 void onEnd()
 {
+	SDL_DestroyTexture(startB.textTexture);
+	SDL_DestroyTexture(exitB.textTexture);
+
+	SDL_DestroyTexture(level1B.textTexture);
+	SDL_DestroyTexture(level2B.textTexture);
+	SDL_DestroyTexture(level3B.textTexture);
+	SDL_DestroyTexture(customB.textTexture);
+
 	free(lines);
 	free(realEntities);
 	free(entities);
 	SDL_DestroyTexture(sprite1.texture);
+	SDL_DestroyTexture(BulletSprite.texture);
 }

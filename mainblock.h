@@ -8,9 +8,10 @@ extern int GameState;
 //Вызывается на запуске программы
 void globalOnStart();
 
-void onStart();
+void onLevelStart(const char* levelname);
 
 //Вызывается каждый кадр
+void levelSelectEachFrame();
 
 void mainMenuEachFrame();
 

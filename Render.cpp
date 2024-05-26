@@ -277,7 +277,7 @@ void smokeRender(const ZHIR_LineF* smklines, int smklinesSize, const ZHIR_LineF*
 				distance = ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, smklines[i]), player.position));
 				bool vis = true;
 
-				for(int j = 0; j < linesArrSize; j++)
+				for (int j = 0; j < linesArrSize; j++)
 				{
 					if (ZHIR_isIntersectF({ player.position, ray }, linesArr[j]) &&
 						ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, linesArr[j]), player.position)) < distance)
@@ -310,4 +310,109 @@ void smokeRender(const ZHIR_LineF* smklines, int smklinesSize, const ZHIR_LineF*
 	}
 
 	free(linePoints);
+}
+
+bool ZHIR_isIntersectFstrict(const ZHIR_LineF& line1, const ZHIR_LineF& line2)
+{
+	// Уравнение первой прямой
+	float A1 = line1.b.y - line1.a.y;
+	float B1 = line1.a.x - line1.b.x;
+	float C1 = line1.b.x * line1.a.y - line1.a.x * line1.b.y;
+
+	// Уравнение второй прямой
+	float A2 = line2.b.y - line2.a.y;
+	float B2 = line2.a.x - line2.b.x;
+	float C2 = line2.b.x * line2.a.y - line2.a.x * line2.b.y;
+
+	// Проверка пересечения отрезков
+	if ((A1 * line2.a.x + B1 * line2.a.y + C1) * (A1 * line2.b.x + B1 * line2.b.y + C1) < 0 &&
+		(A2 * line1.a.x + B2 * line1.a.y + C2) * (A2 * line1.b.x + B2 * line1.b.y + C2) < 0) {
+		return true;
+	}
+	return false;
+}
+
+SDL_FPoint lineRectIntersection(ZHIR_LineF line, SDL_FRect rect)
+{
+	if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+	{
+		return ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+	}
+	if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+	{
+		return ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+	}
+	if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+	{
+		return ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+	}
+	if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+	{
+		return ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	return { 0,0 };
+}
+
+void SDL_drawLineF(ZHIR_LineF line)
+{
+	SDL_RenderDrawLineF(ren, line.a.x, line.a.y, line.b.x, line.b.y);
+}
+
+float minimapsize = WIN_HEIGHT / 3.0f;
+float scale = 0.075;
+SDL_Point placement = { WIN_WIDTH - minimapsize, 0 };
+void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, int entityArrSize)
+{
+	SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
+	SDL_Rect canvas = { placement.x, placement.y, minimapsize, minimapsize };
+	SDL_FRect canvasF = { placement.x, placement.y, minimapsize, minimapsize };
+	SDL_RenderFillRect(ren, &canvas);
+	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+	SDL_RenderDrawRect(ren, &canvas);
+	SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
+	//SDL_RenderDrawLine(ren, canvas.x + canvas.w / 2 - 15, canvas.y + canvas.h / 2, canvas.x + canvas.w / 2 + 15, canvas.y + canvas.h / 2);
+	//SDL_RenderDrawLine(ren, canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 - 15, canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 + 15);
+	ZHIR_drawCircle({ canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 }, player.radius * scale);
+
+	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+	for (int i = 0; i < linesArrSize; i++)
+	{
+		ZHIR_LineF line = {
+			ZHIR_vecSumF(ZHIR_vecMultF(ZHIR_vecSubF(linesArr[i].a, player.position), scale), { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }),
+			ZHIR_vecSumF(ZHIR_vecMultF(ZHIR_vecSubF(linesArr[i].b, player.position), scale), { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 })
+		};
+		line.a = ZHIR_rotateOnDegreeF(line.a, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, player.lFOV + 180 - player.FOV / 2);
+		line.b = ZHIR_rotateOnDegreeF(line.b, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, player.lFOV + 180 - player.FOV / 2);
+		/*line.a.x = -line.a.x + 2 * (canvasF.x + canvasF.w / 2 );
+		line.b.x = -line.b.x + 2 * (canvasF.x + canvasF.w / 2);*/
+
+
+		if (ZHIR_pointInRect(line.a, canvas) && ZHIR_pointInRect(line.b, canvas))
+			SDL_drawLineF(line);
+		else if (ZHIR_pointInRect(line.a, canvas) && !ZHIR_pointInRect(line.b, canvas))
+		{
+			line.b = lineRectIntersection(line, canvasF);
+			SDL_drawLineF(line);
+		}
+		else if (!ZHIR_pointInRect(line.a, canvas) && ZHIR_pointInRect(line.b, canvas))
+		{
+			line.a = lineRectIntersection(line, canvasF);
+			SDL_drawLineF(line);
+		}
+		else
+		{
+			SDL_FPoint newA = lineRectIntersection(line, canvasF);
+			SDL_FPoint newB = lineRectIntersection({ newA, line.b }, canvasF);
+
+			//	line.a = lineRectIntersection(line, canvasF);
+				//line.b = lineRectIntersection(line, canvasF); //this line has new a
+			if (newB.x == 0 && newB.y == 0)
+				newB = lineRectIntersection({ line.a, newA }, canvasF);
+
+			if (!(newA.x == 0 && newA.y == 0))
+				SDL_drawLineF({ newA, newB });
+		}
+	}
+
+	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 }

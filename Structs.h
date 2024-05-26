@@ -10,7 +10,7 @@
 
 struct Player 
 {
-	SDL_FPoint position = { 1500, -150 };
+	SDL_FPoint position = { 0, 0};
 	float radius = 150; //player size
 	SDL_FPoint speedVec = { 0,0 };
 	float speed = 0;

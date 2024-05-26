@@ -123,6 +123,7 @@ int main(int argc, char* argv[])
 		case PAUSED:
 			break;
 		case LEVELSELECT:
+			levelSelectEachFrame();
 			break;
 		case EXIT:
 			RUN = false;
