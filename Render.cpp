@@ -361,6 +361,7 @@ void SDL_drawLineF(ZHIR_LineF line)
 float minimapsize = WIN_HEIGHT / 3.0f;
 float scale = 0.075;
 SDL_Point placement = { WIN_WIDTH - minimapsize, 0 };
+//SDL_Point placement = { 150, 150 };
 void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, int entityArrSize)
 {
 	SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
@@ -373,6 +374,26 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 	//SDL_RenderDrawLine(ren, canvas.x + canvas.w / 2 - 15, canvas.y + canvas.h / 2, canvas.x + canvas.w / 2 + 15, canvas.y + canvas.h / 2);
 	//SDL_RenderDrawLine(ren, canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 - 15, canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 + 15);
 	ZHIR_drawCircle({ canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 }, player.radius * scale);
+	//SDL_RenderDrawLineF(ren, canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 , );
+	//SDL_FPoint viewline2 = { -1,0 };
+	SDL_FPoint canvascenter = { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 };
+	SDL_FPoint viewline1 = ZHIR_rotateOnDegreeF(ZHIR_vecSumF(canvascenter, { 0,-1 }), canvascenter, player.FOV / 2);
+	float angle = ZHIR_vecFindAngleF(ZHIR_vecSubF(viewline1, canvascenter), ZHIR_vecSubF({ canvasF.x, canvasF.y }, canvascenter));
+	float BC = sqrt(canvasF.w * canvasF.w + canvasF.h * canvasF.h) / 2;
+	float AC = canvasF.h * 2;
+	viewline1 = ZHIR_vecMultF(viewline1, BC * (angle / 45));
+	SDL_drawLineF({ viewline1 , canvascenter });
+	/*viewline1 = ZHIR_rotateOnDegreeF(viewline1, { 0,0 }, player.lFOV + 180);
+	viewline2 = ZHIR_rotateOnDegreeF(viewline1, { 0,0 }, player.lFOV + 180 - player.FOV);
+	viewline1 = ZHIR_vecMultf(ZHIR_vecSumF(viewline1, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }), );
+	viewline2 = ZHIR_vecMultf(ZHIR_vecSumF(viewline2, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }), );*/
+
+	//SDL_FPoint canvastop = { canvasF.x + canvasF.w / 2, canvasF.y};
+	//viewline1 = ZHIR_vecMultF(viewline1, ZHIR_vecLengthF(ZHIR_vecSubF(canvastop, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }))
+	//	 / cos((M_PI / 180) * ZHIR_vecFindAngleF(ZHIR_vecSubF(canvastop, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }), ZHIR_vecSubF(viewline1, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }))));
+	//SDL_drawLineF({ viewline1 , { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 } });
+
+
 
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 	for (int i = 0; i < linesArrSize; i++)
@@ -381,11 +402,8 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 			ZHIR_vecSumF(ZHIR_vecMultF(ZHIR_vecSubF(linesArr[i].a, player.position), scale), { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }),
 			ZHIR_vecSumF(ZHIR_vecMultF(ZHIR_vecSubF(linesArr[i].b, player.position), scale), { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 })
 		};
-		line.a = ZHIR_rotateOnDegreeF(line.a, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, player.lFOV + 180 - player.FOV / 2);
-		line.b = ZHIR_rotateOnDegreeF(line.b, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, player.lFOV + 180 - player.FOV / 2);
-		/*line.a.x = -line.a.x + 2 * (canvasF.x + canvasF.w / 2 );
-		line.b.x = -line.b.x + 2 * (canvasF.x + canvasF.w / 2);*/
-
+		line.a = ZHIR_rotateOnDegreeF(line.a, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, -(player.lFOV + 180 - player.FOV / 2));
+		line.b = ZHIR_rotateOnDegreeF(line.b, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, -(player.lFOV + 180 - player.FOV / 2));
 
 		if (ZHIR_pointInRect(line.a, canvas) && ZHIR_pointInRect(line.b, canvas))
 			SDL_drawLineF(line);
@@ -408,6 +426,8 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 				//line.b = lineRectIntersection(line, canvasF); //this line has new a
 			if (newB.x == 0 && newB.y == 0)
 				newB = lineRectIntersection({ line.a, newA }, canvasF);
+
+			//			if (newB.x == 0 && newB.y == 0)
 
 			if (!(newA.x == 0 && newA.y == 0))
 				SDL_drawLineF({ newA, newB });
