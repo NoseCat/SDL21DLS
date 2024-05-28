@@ -332,6 +332,58 @@ bool ZHIR_isIntersectFstrict(const ZHIR_LineF& line1, const ZHIR_LineF& line2)
 	return false;
 }
 
+//???????????
+ZHIR_LineF cutLineInRect(ZHIR_LineF line, SDL_FRect rect)
+{
+	SDL_FPoint A = { 0,0 };
+	SDL_FPoint B = { 0,0 };
+	if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+	{
+		A = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+		else if ((ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} })))
+			B = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	else if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+	{
+		A = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+			B = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	else if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+	{
+		A = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+			B = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+		else if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+	{
+		A = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+			B = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+		else if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+	}
+	return { A,B };
+}
+
 SDL_FPoint lineRectIntersection(ZHIR_LineF line, SDL_FRect rect)
 {
 	if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
@@ -358,8 +410,8 @@ void SDL_drawLineF(ZHIR_LineF line)
 	SDL_RenderDrawLineF(ren, line.a.x, line.a.y, line.b.x, line.b.y);
 }
 
-float minimapsize = WIN_HEIGHT / 3.0f;
-float scale = 0.075;
+float minimapsize = WIN_HEIGHT / 2.5f;
+float scale = 0.06;
 SDL_Point placement = { WIN_WIDTH - minimapsize, 0 };
 //SDL_Point placement = { 150, 150 };
 void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, int entityArrSize)
@@ -377,12 +429,17 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 	//SDL_RenderDrawLineF(ren, canvas.x + canvas.w / 2, canvas.y + canvas.h / 2 , );
 	//SDL_FPoint viewline2 = { -1,0 };
 	SDL_FPoint canvascenter = { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 };
-	SDL_FPoint viewline1 = ZHIR_rotateOnDegreeF(ZHIR_vecSumF(canvascenter, { 0,-1 }), canvascenter, player.FOV / 2);
-	float angle = ZHIR_vecFindAngleF(ZHIR_vecSubF(viewline1, canvascenter), ZHIR_vecSubF({ canvasF.x, canvasF.y }, canvascenter));
+	SDL_FPoint viewline1 = ZHIR_rotateOnDegreeF({ 0, -1 }, { 0,0 }, -player.FOV / 2);
+	float angle = ZHIR_vecFindAngleF(viewline1, ZHIR_vecSubF({ canvasF.x, canvasF.y }, canvascenter));
 	float BC = sqrt(canvasF.w * canvasF.w + canvasF.h * canvasF.h) / 2;
-	float AC = canvasF.h * 2;
-	viewline1 = ZHIR_vecMultF(viewline1, BC * (angle / 45));
+	float AC = canvasF.h / 2;
+	//maybe do function for scaling numbers
+	viewline1 = ZHIR_vecSumF(canvascenter, ZHIR_vecMultF(viewline1, BC - (BC - AC) * (angle / 45)));
+	//printf("%f %f\n", viewline1.x, viewline1.y);
+	//viewline2 = ZHIR_vecMultF(viewline2, BC * (angle / 45));
+	SDL_FPoint viewline2 = ZHIR_rotateOnDegreeF(viewline1, canvascenter, player.FOV);
 	SDL_drawLineF({ viewline1 , canvascenter });
+	SDL_drawLineF({ viewline2 , canvascenter });
 	/*viewline1 = ZHIR_rotateOnDegreeF(viewline1, { 0,0 }, player.lFOV + 180);
 	viewline2 = ZHIR_rotateOnDegreeF(viewline1, { 0,0 }, player.lFOV + 180 - player.FOV);
 	viewline1 = ZHIR_vecMultf(ZHIR_vecSumF(viewline1, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }), );
@@ -392,6 +449,18 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 	//viewline1 = ZHIR_vecMultF(viewline1, ZHIR_vecLengthF(ZHIR_vecSubF(canvastop, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }))
 	//	 / cos((M_PI / 180) * ZHIR_vecFindAngleF(ZHIR_vecSubF(canvastop, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }), ZHIR_vecSubF(viewline1, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }))));
 	//SDL_drawLineF({ viewline1 , { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 } });
+
+	SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+	for (int i = 0; i < entityArrSize; i++)
+	{
+		if (entityArr[i]->type == SHOOTER || entityArr[i]->type == RUNNER)
+		{
+			SDL_FPoint pos = ZHIR_vecSumF(ZHIR_vecMultF(ZHIR_vecSubF(entityArr[i]->position, player.position), scale), { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 });
+			pos = ZHIR_rotateOnDegreeF(pos, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, -(player.lFOV + 180 - player.FOV / 2));
+			if (ZHIR_pointInRect(pos, canvas))
+				ZHIR_drawCircleF(pos, entityArr[i]->radius * scale);
+		}
+	}
 
 
 
@@ -419,18 +488,16 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 		}
 		else
 		{
-			SDL_FPoint newA = lineRectIntersection(line, canvasF);
-			SDL_FPoint newB = lineRectIntersection({ newA, line.b }, canvasF);
+			/*	SDL_FPoint newA = lineRectIntersection(line, canvasF);
+				SDL_FPoint newB = lineRectIntersection({ newA, line.b }, canvasF);
 
-			//	line.a = lineRectIntersection(line, canvasF);
-				//line.b = lineRectIntersection(line, canvasF); //this line has new a
-			if (newB.x == 0 && newB.y == 0)
-				newB = lineRectIntersection({ line.a, newA }, canvasF);
+				if (newB.x == 0.0f && newB.y == 0.0f)
+					newB = lineRectIntersection({ line.a, newA }, canvasF);
 
-			//			if (newB.x == 0 && newB.y == 0)
+				if (!(newA.x == 0.0f && newA.y == 0.0f))
+					SDL_drawLineF({ newA, newB */
 
-			if (!(newA.x == 0 && newA.y == 0))
-				SDL_drawLineF({ newA, newB });
+			SDL_drawLineF(cutLineInRect(line, canvasF));
 		}
 	}
 

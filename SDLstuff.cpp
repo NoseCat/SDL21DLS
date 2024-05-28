@@ -249,10 +249,14 @@ SDL_FPoint ZHIR_dotProjLineF(const ZHIR_LineF& line, const SDL_FPoint& p)
 
 int ZHIR_vecFindAngle(const SDL_Point& vec1, const SDL_Point& vec2)
 {
+	if (vec1.x / vec1.y == vec2.x / vec2.y)
+		return 0;
 	return (int)(acos(ZHIR_vecMultScalar(vec1, vec2) / (ZHIR_vecLength(vec1) * ZHIR_vecLength(vec2))) * 180 / M_PI);
 }
 float ZHIR_vecFindAngleF(const SDL_FPoint& vec1, const SDL_FPoint& vec2)
 {
+	if (vec1.x / vec1.y == vec2.x / vec2.y)
+		return 0;
 	return acos(ZHIR_vecMultScalarF(vec1, vec2) / (ZHIR_vecLengthF(vec1) * ZHIR_vecLengthF(vec2))) * 180 / M_PI;
 }
 

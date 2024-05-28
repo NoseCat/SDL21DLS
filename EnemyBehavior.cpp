@@ -10,7 +10,8 @@ static void enemyRunnerBehavior(Entity& entity)
 	entity.dir = ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position));
 }
 
-static void enemyShooterBehavior(Entity& entity)
+void spawnEnemyBullet(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FPoint speedVec);
+static void enemyShooterBehavior(Entity* entityArr, int entityArrSize, Entity& entity, float delta)
 {
 	if (entity.health <= 0)
 	{
@@ -23,9 +24,18 @@ static void enemyShooterBehavior(Entity& entity)
 	if (distToPlayer < dangerRange)
 		entity.dir = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position)), -1);
 	else if (distToPlayer >= dangerRange && distToPlayer <= toofarRange)
+	{
 		entity.dir = { 0,0 };
+		entity.actionDelay.time -= delta;
+	}
 	else //if (distToPlayer >= toofarRange)
 		entity.dir = ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position));
+
+	if (entity.actionDelay.time <= 0)
+	{
+		spawnEnemyBullet(entityArr, entityArrSize, entity.position, ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position)), 3000));
+		entity.actionDelay.time = 3;
+	}
 }
 
 //static void enemyEntCol(Entity& entity, SDL_FPoint entColVec, int entType)
@@ -42,7 +52,15 @@ static void enemyShooterBehavior(Entity& entity)
 //	}
 //}
 
-static void entityBulletBehavior(Entity& entity, Entity* entArr, int entArrSize)
+static void entityEnemyBulletBehavior(Entity& entity)
+{
+	if (ZHIR_vecLengthF(ZHIR_vecSubF(entity.position, player.position)) > viewDistance)
+		entity.type = EMPTY;
+
+	return;
+}
+
+static void entityBulletBehavior(Entity& entity)
 {
 	if (ZHIR_vecLengthF(ZHIR_vecSubF(entity.position, player.position)) > viewDistance)
 		entity.type = EMPTY;
@@ -106,7 +124,7 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 		if (entityArr[i]->type == BULLET)
 			for (int j = 0; j < entityArrSize; j++)
 			{
-				if (entityArr[j]->type == EMPTY || i == j || entityArr[j]->type == BULLET)
+				if (entityArr[j]->type == EMPTY || i == j || entityArr[j]->type == BULLET || entityArr[j]->type == ENEMYBULLET)
 					continue;
 
 
@@ -147,10 +165,38 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 				}
 			}
 
+		if (entityArr[i]->type == ENEMYBULLET &&
+			isCircleCircleCollide(entityArr[i]->position, entityArr[i]->radius, player.position, player.radius) &&
+			!player.damageInv.active)
+		{
+			player.health -= 15;
+			//some damage visuals
+			SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+			SDL_RenderDrawLine(ren, 0, 0, WIN_WIDTH, WIN_HEIGHT);
+			SDL_RenderDrawLine(ren, WIN_WIDTH, 0, 0, WIN_HEIGHT);
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+			player.damageInv.active = true;
+			player.damageInv.time = 2;
+			entityArr[i]->type = EMPTY;
+		}
+		if (entityArr[i]->type == RUNNER &&
+			isCircleCircleCollide(entityArr[i]->position, entityArr[i]->radius, player.position, player.radius) &&
+			!player.damageInv.active)
+		{
+			player.health -= 15;
+			//some damage visuals
+			SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+			SDL_RenderDrawLine(ren, 0, 0, WIN_WIDTH, WIN_HEIGHT);
+			SDL_RenderDrawLine(ren, WIN_WIDTH, 0, 0, WIN_HEIGHT);
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+			player.damageInv.active = true;
+			player.damageInv.time = 2;
+		}
+
 		for (int j = 0; j < linesArrSize; j++)
 		{
 			newPosition = lineCircleCollideIterations(linesArr[j], entityArr[i]->position, newPosition, entityArr[i]->radius, collisionPrecision, lineCol);
-			if (lineCol && entityArr[i]->type == BULLET)
+			if (lineCol && (entityArr[i]->type == BULLET || entityArr[i]->type == ENEMYBULLET))
 				entityArr[i]->type = EMPTY;
 			lineColVec = ZHIR_vecSumF(ZHIR_vecSubF(newPosition, truePosition), lineColVec);
 		}
@@ -168,11 +214,15 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 			break;
 
 		case SHOOTER:
-			enemyShooterBehavior(*(entityArr[i]));
+			enemyShooterBehavior(*(entityArr), entityArrSize, *(entityArr[i]), delta);
 			break;
 
 		case BULLET:
-			entityBulletBehavior(*(entityArr[i]), *entityArr, entityArrSize);
+			entityBulletBehavior(*(entityArr[i]));
+			break;
+
+		case ENEMYBULLET:
+			entityEnemyBulletBehavior(*(entityArr[i]));
 			break;
 
 		default:
@@ -203,6 +253,28 @@ void spawnBullet(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FPoin
 			entityArr[i].dir = ZHIR_vecNormal(speedVec);
 			entityArr[i].vertSize = 133;
 			entityArr[i].radius = 133;
+			break;
+		}
+	}
+}
+
+void spawnEnemyBullet(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FPoint speedVec)
+{
+	for (int i = 0; i < entityArrSize; i++)
+	{
+		if (entityArr[i].type == EMPTY)
+		{
+			entityArr[i].type = ENEMYBULLET;
+			entityArr[i].sprite = &BulletSprite;
+			entityArr[i].position = pos;
+			entityArr[i].speedLimit = ZHIR_vecLengthF(speedVec);
+			entityArr[i].accel = entityArr[i].speedLimit;
+			entityArr[i].friction = 0;
+			entityArr[i].accelVec = speedVec;
+			entityArr[i].speedVec = speedVec;
+			entityArr[i].dir = ZHIR_vecNormal(speedVec);
+			entityArr[i].vertSize = 100;
+			entityArr[i].radius = 100;
 			break;
 		}
 	}

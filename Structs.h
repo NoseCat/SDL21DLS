@@ -19,12 +19,15 @@ struct Player
 	SDL_FPoint accelVec = { 0,0 };
 	float accel = 10000 + friction;
 
+	Timer damageInv = { true, 2 };
+
 	int health = 100;
 	int bulletDamage = 20;
-	Timer shotDelay = { true,  1 };
+	Timer shotDelay = { true,  0.8 };
 
+	//needs fix
 	float FOV = 90;
-	float lFOV = 45 + 180;
+	float lFOV =  0;
 	float hFOV = lFOV + FOV;
 };
 
@@ -35,7 +38,7 @@ struct Sprite
 	int h;
 };
 
-enum EnemyTypes { EMPTY, RUNNER, SHOOTER, BULLET };
+enum EnemyTypes { EMPTY, RUNNER, SHOOTER, PORTAL, BULLET, ENEMYBULLET };
 
 struct Entity
 {
@@ -52,6 +55,8 @@ struct Entity
 	SDL_FPoint accelVec = { 0,0 };
 
 	int health = 100;
+
+	Timer actionDelay = { false, 3 };
 
 	Sprite* sprite;
 	//real position of sprite

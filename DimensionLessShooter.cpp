@@ -19,10 +19,13 @@ float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
 int collisionPrecision = 15;
 int bulletBuffer = 50;
 
+float curtime = 0;
+float bestLevelTime;
 Entity* realEntities = nullptr;
 Entity** entities = nullptr;
 int enemiesAmount = 0;
 int totalEntities = enemiesAmount + bulletBuffer;
+int countEnemies = 0;
 
 ZHIR_LineF* lines = nullptr;
 int linesSize = 0;
@@ -49,6 +52,7 @@ SDL_Rect startButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HE
 SDL_Rect exitButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 Button startB = { startButton , false, nullptr };
 Button exitB = { exitButton , false , nullptr };
+Button againB = { startButton , false, nullptr };
 
 SDL_Rect level1Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect level2Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
@@ -58,6 +62,8 @@ Button level1B = { level1Button , false, nullptr };
 Button level2B = { level2Button , false , nullptr };
 Button level3B = { level3Button , false, nullptr };
 Button customB = { customButton , false , nullptr };
+Button timeLabel = { {0,0, WIN_WIDTH, WIN_HEIGHT / 6}, false, nullptr };
+Button recordLabel = { {0, WIN_HEIGHT - WIN_HEIGHT / 6, WIN_WIDTH, WIN_HEIGHT / 6}, false, nullptr };
 
 void texturefromtext(Button& button, const char* text, TTF_Font* my_font, SDL_Color fore_color, SDL_Color back_color)
 {
@@ -93,6 +99,7 @@ void globalOnStart()
 
 	texturefromtext(startB, "play\0", my_font, fore_color, back_color);
 	texturefromtext(exitB, "exit\0", my_font, fore_color, back_color);
+	texturefromtext(againB, "again\0", my_font, fore_color, back_color);
 
 	texturefromtext(level1B, "level 1\0", my_font, fore_color, back_color);
 	texturefromtext(level2B, "level 2\0", my_font, fore_color, back_color);
@@ -108,8 +115,17 @@ void globalOnStart()
 	spritefromimage(BulletSprite, "bullet.png");
 }
 
+char* curlevel;
 void onLevelStart(const char* levelname)
 {
+	player.position = { 0, 0 };
+	player.accelVec = { 0,0 };
+	player.speedVec = { 0,0 };
+	player.speed = 0;
+	player.health = 100;
+	player.shotDelay.active = true;
+
+	curtime = 0;
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	FILE* levelRead;
@@ -118,6 +134,7 @@ void onLevelStart(const char* levelname)
 		printf("could not load the level");
 		exit(1);
 	}
+	fread(&bestLevelTime, sizeof(float), 1, levelRead);
 
 	fread(&linesSize, sizeof(int), 1, levelRead);
 	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
@@ -261,7 +278,7 @@ void eachFrame(float delta)
 				entities[i]->health -= 2 * player.bulletDamage;
 		}
 		player.shotDelay.active = true;
-		player.shotDelay.time = 1;
+		player.shotDelay.time = 0.8;
 	}
 	if (input_LMB && !player.shotDelay.active)
 	{
@@ -272,10 +289,54 @@ void eachFrame(float delta)
 		player.shotDelay.time = 1;
 	}
 	ZHIR_timerTickDown(player.shotDelay, delta);
-
+	if (player.damageInv.active)
+		player.damageInv.time -= delta;
+	if (player.damageInv.time <= 0)
+		player.damageInv.active = false;
 	//entityAssemble(entities, realEntities, enemiesAmount, bulletBuffer);
 
+	curtime += delta;
 	updateEnemies(entities, totalEntities, lines, linesSize, delta);
+	countEnemies = 0;
+	for (int i = 0; i < totalEntities; i++)
+	{
+		if (entities[i]->type == SHOOTER || entities[i]->type == RUNNER)
+			countEnemies++;
+	}
+	if (countEnemies == 0)
+	{
+		GameState = LEVELWIN;
+		TTF_Init();
+		if (curtime < bestLevelTime || bestLevelTime < 0)
+		{
+			FILE* levelWrite;
+			/*if (fopen_s(&levelWrite, curlevel, "ab") != 0)
+				exit(1);*/
+				//fseek(levelWrite, 0, SEEK_SET);
+				//fwrite(&curtime, sizeof(float), 1, levelWrite);
+				//fclose(levelWrite);
+			bestLevelTime = curtime;
+		}
+		TTF_Font* my_font = TTF_OpenFont("Text.ttf", 100);
+		SDL_Color fore_color = { 130,140,50 };
+		SDL_Color back_color = { 188,155,166 };
+		char* buf = (char*)malloc(sizeof(char) * 50);
+		_itoa_s(curtime, buf, 50, 10);
+		strcat_s(buf, 50, " seconds is your time");
+		texturefromtext(timeLabel, buf, my_font, fore_color, back_color);
+		_itoa_s(bestLevelTime, buf, 50, 10);
+		strcat_s(buf, 50, " seconds is record");
+		texturefromtext(recordLabel, buf, my_font, fore_color, back_color);
+		free(buf);
+		TTF_CloseFont(my_font);
+		TTF_Quit();
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+	}
+	if (player.health <= 0)
+	{
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+		GameState = LEVELLOST;
+	}
 
 	enemyPreRender(entities, totalEntities);
 
@@ -316,8 +377,16 @@ void levelSelectEachFrame()
 	ZHIR_updateButton(customB);
 	if (level1B.pressed)
 	{
-		//onStart();
-		onLevelStart("test5.bin");
+		curlevel = (char*)malloc(sizeof(char) * 20);
+		strcpy_s(curlevel, 20, "level1.bin");
+		onLevelStart("level1.bin");
+		GameState = GAME;
+	}
+	if (level2B.pressed)
+	{
+		curlevel = (char*)malloc(sizeof(char) * 20);
+		strcpy_s(curlevel, 20, "level2.bin");
+		onLevelStart("level2.bin");
 		GameState = GAME;
 	}
 }
@@ -328,11 +397,47 @@ void mainMenuEachFrame()
 	ZHIR_updateButton(exitB);
 	if (startB.pressed)
 	{
-		//onStart();
+		input_LMB = false;
 		GameState = LEVELSELECT;
 	}
 	if (exitB.pressed)
 		GameState = EXIT;
+}
+
+void winLevelEachFrame()
+{
+	ZHIR_updateButton(timeLabel);
+	ZHIR_updateButton(recordLabel);
+	ZHIR_updateButton(againB);
+	ZHIR_updateButton(exitB);
+	if (againB.pressed)
+	{
+		onLevelStart(curlevel);
+		GameState = GAME;
+	}
+	if (exitB.pressed)
+	{
+		exitB.pressed = false;
+		input_LMB = false;
+		GameState = MENU;
+	}
+}
+
+void lostLevelEachFrame()
+{
+	ZHIR_updateButton(againB);
+	ZHIR_updateButton(exitB);
+	if (againB.pressed)
+	{
+		onLevelStart(curlevel);
+		GameState = GAME;
+	}
+	if (exitB.pressed)
+	{
+		exitB.pressed = false;
+		input_LMB = false;
+		GameState = MENU;
+	}
 }
 
 void onEnd()

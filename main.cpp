@@ -125,6 +125,12 @@ int main(int argc, char* argv[])
 		case LEVELSELECT:
 			levelSelectEachFrame();
 			break;
+		case LEVELWIN:
+			winLevelEachFrame();
+			break;
+		case LEVELLOST:
+			lostLevelEachFrame();
+			break;
 		case EXIT:
 			RUN = false;
 			break;
