@@ -38,7 +38,7 @@ struct Sprite
 	int h;
 };
 
-enum ColorCode { RED, GREEN, BLUE };
+enum ColorCode { RED = 1, GREEN, BLUE };
 struct Door
 {
 	ZHIR_LineF line;

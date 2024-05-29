@@ -127,6 +127,7 @@ void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSi
 
 	free(linePoints);
 	free(lineIntersections);
+	free(lineIntersectionsID);
 }
 
 void renderImage(const Sprite* sprite, const SDL_FRect& fullRect, const SDL_FRect& cutRect)
@@ -493,7 +494,7 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 	SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
 	for (int i = 0; i < entityArrSize; i++)
 	{
-		if (entityArr[i]->type == SHOOTER || entityArr[i]->type == RUNNER)
+		if (entityArr[i]->type == SHOOTER || entityArr[i]->type == RUNNER || entityArr[i]->type == PORTAL)
 		{
 			SDL_FPoint pos = ZHIR_vecSumF(ZHIR_vecMultF(ZHIR_vecSubF(entityArr[i]->position, player.position), scale), { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 });
 			pos = ZHIR_rotateOnDegreeF(pos, { canvasF.x + canvasF.w / 2, canvasF.y + canvasF.h / 2 }, -(player.lFOV + 180 - player.FOV / 2));
@@ -501,8 +502,6 @@ void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, i
 				ZHIR_drawCircleF(pos, entityArr[i]->radius * scale);
 		}
 	}
-
-
 
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 	for (int i = 0; i < linesArrSize; i++)

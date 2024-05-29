@@ -171,7 +171,7 @@ void onLevelStart(const char* levelname)
 	}
 	for (int i = 0; i < totalEntities; i++)
 	{
-		if (realEntities[i].type != SHOOTER && realEntities[i].type != RUNNER && realEntities[i].type != PORTAL 
+		if (realEntities[i].type != SHOOTER && realEntities[i].type != RUNNER && realEntities[i].type != PORTAL
 			&& realEntities[i].type != KEYCARDRED && realEntities[i].type != KEYCARDGREEN && realEntities[i].type != KEYCARDBLUE)
 		{
 			//printf("%i\n", realEntities[i].type);
@@ -291,7 +291,7 @@ void eachFrame(float delta)
 		SDL_RenderDrawLine(ren, WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2, WIN_HEIGHT);
 		for (int i = 0; i < totalEntities; i++)
 		{
-			if ((entities[i]->type == RUNNER || entities[i]->type == SHOOTER) && ZHIR_isIntersectF(entities[i]->face1, { player.position, rayCast }))
+			if ((entities[i]->type == RUNNER || entities[i]->type == SHOOTER || entities[i]->type == PORTAL) && ZHIR_isIntersectF(entities[i]->face1, { player.position, rayCast }))
 				entities[i]->health -= 2 * player.bulletDamage;
 		}
 		player.shotDelay.active = true;
@@ -314,12 +314,34 @@ void eachFrame(float delta)
 
 	curtime += delta;
 	updateEnemies(entities, totalEntities, lines, linesSize, doors, doorsSize, delta);
+
+	for (int i = 0; i < doorsSize; i++)
+	{
+		if (doors[i].open)
+		{
+			lines[linesSize + i] = { {3e38f,3e38f }, {3e38f,3e38f } };
+		}
+	}
+
+	enemyPreRender(entities, totalEntities);
+
+	lineRender(lines, doors, linesSize, doorsSize);
+
+	//smokeRender(smkLines, smkLinesSize, lines, linesSize);
+
+	entityRender(entities, totalEntities, lines, linesSize + doorsSize);
+
+	minimap(lines, linesSize + doorsSize, entities, totalEntities);
+
+	//ZHIR_drawCircleF(playerPosition, radius);
+
 	countEnemies = 0;
 	for (int i = 0; i < totalEntities; i++)
 	{
-		if (entities[i]->type == SHOOTER || entities[i]->type == RUNNER)
+		if (entities[i]->type == SHOOTER || entities[i]->type == RUNNER || entities[i]->type == PORTAL)
 			countEnemies++;
 	}
+
 	if (countEnemies == 0)
 	{
 		GameState = LEVELWIN;
@@ -348,36 +370,15 @@ void eachFrame(float delta)
 		TTF_CloseFont(my_font);
 		TTF_Quit();
 		SDL_SetRelativeMouseMode(SDL_FALSE);
+		onLevelEnd();
 	}
 	if (player.health <= 0)
 	{
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 		GameState = LEVELLOST;
+		onLevelEnd();
 	}
-
-	for (int i = 0; i < doorsSize; i++)
-	{
-		if (doors[i].open)
-		{
-			lines[linesSize + i] = { {3e38f,3e38f }, {3e38f,3e38f } };
-		}
-	}
-
-	enemyPreRender(entities, totalEntities);
-
-	lineRender(lines, doors, linesSize, doorsSize);
-
-	//smokeRender(smkLines, smkLinesSize, lines, linesSize);
-
-	entityRender(entities, totalEntities, lines, linesSize + doorsSize);
-
-	minimap(lines, linesSize + doorsSize, entities, totalEntities);
-
-	//ZHIR_drawCircleF(playerPosition, radius);
 }
-
-
-
 
 void ZHIR_updateButton(Button& button)
 {
@@ -402,16 +403,30 @@ void levelSelectEachFrame()
 	ZHIR_updateButton(customB);
 	if (level1B.pressed)
 	{
-		curlevel = (char*)malloc(sizeof(char) * 20);
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
 		strcpy_s(curlevel, 20, "level1.bin");
 		onLevelStart("level1.bin");
 		GameState = GAME;
 	}
 	if (level2B.pressed)
 	{
-		curlevel = (char*)malloc(sizeof(char) * 20);
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
 		strcpy_s(curlevel, 20, "level2.bin");
 		onLevelStart("level2.bin");
+		GameState = GAME;
+	}
+	if (level3B.pressed)
+	{
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
+		strcpy_s(curlevel, 20, "level3.bin");
+		onLevelStart("level3.bin");
+		GameState = GAME;
+	}
+	if (customB.pressed)
+	{
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
+		strcpy_s(curlevel, 20, "custom.bin");
+		onLevelStart("custom.bin");
 		GameState = GAME;
 	}
 }
@@ -437,6 +452,8 @@ void winLevelEachFrame()
 	ZHIR_updateButton(exitB);
 	if (againB.pressed)
 	{
+		SDL_DestroyTexture(timeLabel.textTexture);
+		SDL_DestroyTexture(recordLabel.textTexture);
 		onLevelStart(curlevel);
 		GameState = GAME;
 	}
@@ -465,8 +482,19 @@ void lostLevelEachFrame()
 	}
 }
 
+void onLevelEnd()
+{
+	free(lines);
+	free(doors);
+	free(realEntities);
+	free(entities);
+}
+
 void onEnd()
 {
+	//onLevelEnd();
+
+	free(curlevel);
 	SDL_DestroyTexture(startB.textTexture);
 	SDL_DestroyTexture(exitB.textTexture);
 
@@ -475,9 +503,6 @@ void onEnd()
 	SDL_DestroyTexture(level3B.textTexture);
 	SDL_DestroyTexture(customB.textTexture);
 
-	free(lines);
-	free(realEntities);
-	free(entities);
 	SDL_DestroyTexture(sprite1.texture);
 	SDL_DestroyTexture(BulletSprite.texture);
 }

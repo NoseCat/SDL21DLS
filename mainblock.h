@@ -22,6 +22,8 @@ void lostLevelEachFrame();
 void eachFrame(float delta);
 
 //Вызывается после основного игрового цикла
+void onLevelEnd();
+
 void onEnd();
 
 #endif

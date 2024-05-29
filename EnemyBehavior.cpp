@@ -50,6 +50,49 @@ static void enemyShooterBehavior(Entity* entityArr, int entityArrSize, Entity& e
 	}
 }
 
+static void enemyPortalBehavior(Entity* entityArr, int entityArrSize, Entity& entity, float delta)
+{
+	if (entity.health <= 0)
+	{
+		entity.type = EMPTY;
+	}
+
+	if (!entity.active)
+	{
+		entity.dir = { 0,0 };
+		return;
+	}
+
+	entity.dir = { 0,0 };
+	entity.actionDelay.time -= delta;
+
+	if (entity.actionDelay.time <= 0)
+	{
+		for (int i = 0; i < entityArrSize; i++)
+		{
+			if (entityArr[i].type == EMPTY)
+			{
+				entityArr[i].health = 100;
+				entityArr[i].accel = 4000;
+				entityArr[i].speedLimit = 5000;
+				entityArr[i].type = RUNNER;
+				entityArr[i].position = entity.position;
+				entityArr[i].speed = 600;
+				entityArr[i].friction = 2000;
+				entityArr[i].radius = 200;
+				entityArr[i].vertSize = 400;
+				entityArr[i].accelVec = {0,0};
+				entityArr[i].active = true;
+				entityArr[i].sprite = &sprite1;
+
+				break;
+			}
+		}
+
+		entity.actionDelay.time = 3;
+	}
+}
+
 //static void enemyEntCol(Entity& entity, SDL_FPoint entColVec, int entType)
 //{
 ////	entity.accelVec = ZHIR_vecSumF(entity.accelVec, ZHIR_vecMultF(ZHIR_vecNormal(entColVec), 100000));
@@ -139,7 +182,6 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 				if (entityArr[j]->type == EMPTY || i == j || entityArr[j]->type == BULLET || entityArr[j]->type == ENEMYBULLET)
 					continue;
 
-
 				newPosition = circleCircleCollideIterations(entityArr[j]->position, entityArr[j]->radius, entityArr[i]->position, newPosition, entityArr[i]->radius, 15, entCol);
 				//entColVec = ZHIR_vecSumF(ZHIR_vecSubF(newPosition, truePosition), entColVec);
 				if (entCol)
@@ -218,7 +260,7 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 			player.damageInv.time = 2;
 		}
 
-		for (int j = 0; j < linesArrSize; j++)
+		for (int j = 0; j < linesArrSize + doorsArrSize; j++)
 		{
 			newPosition = lineCircleCollideIterations(linesArr[j], entityArr[i]->position, newPosition, entityArr[i]->radius, collisionPrecision, lineCol);
 			if (lineCol && (entityArr[i]->type == BULLET || entityArr[i]->type == ENEMYBULLET))
@@ -274,6 +316,10 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 
 		case SHOOTER:
 			enemyShooterBehavior(*(entityArr), entityArrSize, *(entityArr[i]), delta);
+			break;
+
+		case PORTAL:
+			enemyPortalBehavior(*(entityArr), entityArrSize, *(entityArr[i]), delta);
 			break;
 
 		case BULLET:
