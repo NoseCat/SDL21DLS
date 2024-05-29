@@ -38,7 +38,15 @@ struct Sprite
 	int h;
 };
 
-enum EnemyTypes { EMPTY, RUNNER, SHOOTER, PORTAL, BULLET, ENEMYBULLET };
+enum ColorCode { RED, GREEN, BLUE };
+struct Door
+{
+	ZHIR_LineF line;
+	bool open = false;
+	int id;
+};
+
+enum EnemyTypes { EMPTY, RUNNER, SHOOTER, PORTAL, BULLET, ENEMYBULLET, KEYCARDRED, KEYCARDGREEN, KEYCARDBLUE};
 
 struct Entity
 {
@@ -65,6 +73,8 @@ struct Entity
 	ZHIR_LineF face2;
 	//on screen sprite height
 	float vertSize = 100;
+
+	bool active = false;
 };
 
 #pragma endregion //STRUCTS

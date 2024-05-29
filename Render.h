@@ -5,7 +5,7 @@
 #include "Structs.h"
 #include "SDLstuff.h"
 
-void lineRender(const ZHIR_LineF* linesArr, int linesArrSize);
+void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSize, int doorsArrSize);
 void renderImage(const Sprite* sprite, const SDL_FRect& fullRect, const SDL_FRect& cutRect);
 void entityRender(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize);
 void enemyPreRender(Entity** entityArr, int entityArrSize);

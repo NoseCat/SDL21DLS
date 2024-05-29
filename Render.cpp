@@ -1,16 +1,21 @@
 #include "Render.h"
 
-void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
+void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSize, int doorsArrSize)
 {
 	//initializtion
+	int linesSize = linesArrSize;
+	linesArrSize += doorsArrSize;
+
 	SDL_FPoint unitVec = ZHIR_vecSumF(player.position, { 1,0 });
 	int numPoints = ((int)(player.FOV / rayPrecision) + 1);
 	SDL_FPoint* linePoints = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * numPoints);
 	int* lineIntersections = (int*)malloc(sizeof(int) * numPoints);
+	int* lineIntersectionsID = (int*)malloc(sizeof(int) * numPoints);
 	for (int i = 0; i < numPoints; i++)
 	{
 		linePoints[i] = { -1, -1 };
 		lineIntersections[i] = -1;
+		lineIntersectionsID[i] = -1;
 	}
 
 	//compute cycle
@@ -34,6 +39,11 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 					float x = WIN_WIDTH * (angle - player.lFOV) / player.FOV;
 					linePoints[numPoints] = { x,  size };
 					lineIntersections[numPoints] = i;
+
+					if (i >= linesSize)
+						lineIntersectionsID[numPoints] = doorsArr[i - linesSize].id;
+					else
+						lineIntersectionsID[numPoints] = -1;
 				}
 			}
 		}
@@ -43,8 +53,22 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 	//render cycle
 	for (int i = 0; i < numPoints - 1; i++)
 	{
-		SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-		//SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+		switch (lineIntersectionsID[i])
+		{
+		default:
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			break;
+		case RED:
+			SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			break;
+		case GREEN:
+			SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			break;
+		case BLUE:
+			SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			break;
+		}
+		/*SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);*/
 		bool intersection = false;
 		if (lineIntersections[i] != lineIntersections[i + 1])
 		{
@@ -53,6 +77,7 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 
 		if (!intersection)
 		{
+			//printf("%i ", linePoints[i].x);
 			SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i + 1].y);
 			SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
 
@@ -75,7 +100,22 @@ void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 			}
 			else if (linePoints[i + 1].x >= 0) //most left border
 			{
-				SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+				//SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+				switch (lineIntersectionsID[i + 1])
+				{
+				default:
+					SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				case RED:
+					SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				case GREEN:
+					SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				case BLUE:
+					SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				}
 				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, linePoints[i + 1].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
 			}
 			else //most right border

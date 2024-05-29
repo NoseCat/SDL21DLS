@@ -7,6 +7,12 @@ static void enemyRunnerBehavior(Entity& entity)
 		entity.type = EMPTY;
 	}
 
+	if (!entity.active)
+	{
+		entity.dir = { 0,0 };
+		return;
+	}
+
 	entity.dir = ZHIR_vecNormal(ZHIR_vecSubF(player.position, entity.position));
 }
 
@@ -16,6 +22,12 @@ static void enemyShooterBehavior(Entity* entityArr, int entityArrSize, Entity& e
 	if (entity.health <= 0)
 	{
 		entity.type = EMPTY;
+	}
+
+	if (!entity.active)
+	{
+		entity.dir = { 0,0 };
+		return;
 	}
 
 	float dangerRange = 2000;
@@ -93,7 +105,7 @@ static void entityBulletBehavior(Entity& entity)
 //}
 
 //bool, return collision with player
-void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize, float delta)
+void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize, Door* doorsArr, int doorsArrSize, float delta)
 {
 	for (int i = 0; i < entityArrSize; i++)
 	{
@@ -165,6 +177,19 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 				}
 			}
 
+		if (!entityArr[i]->active && (entityArr[i]->type == RUNNER || entityArr[i]->type == SHOOTER || entityArr[i]->type == PORTAL))
+		{
+			entityArr[i]->active = true;
+			for (int j = 0; j < linesArrSize; j++)
+			{
+				if (ZHIR_isIntersectF({ player.position, entityArr[i]->position }, linesArr[j]))
+				{
+					entityArr[i]->active = false;
+					break;
+				}
+			}
+		}
+
 		if (entityArr[i]->type == ENEMYBULLET &&
 			isCircleCircleCollide(entityArr[i]->position, entityArr[i]->radius, player.position, player.radius) &&
 			!player.damageInv.active)
@@ -201,11 +226,45 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 			lineColVec = ZHIR_vecSumF(ZHIR_vecSubF(newPosition, truePosition), lineColVec);
 		}
 
+		if ((entityArr[i]->type == KEYCARDRED || entityArr[i]->type == KEYCARDGREEN || entityArr[i]->type == KEYCARDBLUE)
+			&& isCircleCircleCollide(entityArr[i]->position, entityArr[i]->radius, player.position, player.radius))
+		{
+			SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
+			SDL_RenderDrawLine(ren, 0, 0, WIN_WIDTH, WIN_HEIGHT);
+			SDL_RenderDrawLine(ren, WIN_WIDTH, 0, 0, WIN_HEIGHT);
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+
+			int colorcode = 0;
+			switch (entityArr[i]->type)
+			{
+			case KEYCARDRED:
+				colorcode = RED;
+				break;
+			case KEYCARDGREEN:
+				colorcode = GREEN;
+				break;
+			case KEYCARDBLUE:
+				colorcode = BLUE;
+				break;
+			}
+
+			for (int j = 0; j < doorsArrSize; j++)
+			{
+				if (colorcode == doorsArr[j].id)
+					doorsArr[j].open = true;
+			}
+
+			entityArr[i]->type = EMPTY;
+		}
+
 		entityArr[i]->position = newPosition;
 
 
 		switch (entityArr[i]->type)
 		{
+		case KEYCARDRED:
+		case KEYCARDGREEN:
+		case KEYCARDBLUE:
 		case EMPTY:
 			break;
 

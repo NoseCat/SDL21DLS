@@ -29,6 +29,12 @@ int countEnemies = 0;
 
 ZHIR_LineF* lines = nullptr;
 int linesSize = 0;
+
+Door* doors = nullptr;
+int doorsSize = 0;
+
+//float max = 3e38f;
+
 //SDL_FPoint pf1;
 //SDL_FPoint pf2;
 //SDL_FPoint pf3;
@@ -140,6 +146,16 @@ void onLevelStart(const char* levelname)
 	lines = (ZHIR_LineF*)malloc(sizeof(ZHIR_LineF) * linesSize);
 	fread(lines, sizeof(ZHIR_LineF), linesSize, levelRead);
 
+	fread(&doorsSize, sizeof(int), 1, levelRead);
+	doors = (Door*)malloc(sizeof(Door) * doorsSize);
+	fread(doors, sizeof(Door), doorsSize, levelRead);
+	lines = (ZHIR_LineF*)realloc(lines, sizeof(ZHIR_LineF) * (linesSize + doorsSize));
+	for (int i = 0; i < doorsSize; i++)
+	{
+		lines[i + linesSize] = doors[i].line;
+		//doors[i].open = false;
+	}
+
 	fread(&enemiesAmount, sizeof(int), 1, levelRead);
 	realEntities = (Entity*)malloc(sizeof(Entity) * enemiesAmount);
 	fread(realEntities, sizeof(Entity), enemiesAmount, levelRead);
@@ -155,9 +171,10 @@ void onLevelStart(const char* levelname)
 	}
 	for (int i = 0; i < totalEntities; i++)
 	{
-		if (realEntities[i].type != SHOOTER && realEntities[i].type != RUNNER)
+		if (realEntities[i].type != SHOOTER && realEntities[i].type != RUNNER && realEntities[i].type != PORTAL 
+			&& realEntities[i].type != KEYCARDRED && realEntities[i].type != KEYCARDGREEN && realEntities[i].type != KEYCARDBLUE)
 		{
-			printf("%i\n", realEntities[i].type);
+			//printf("%i\n", realEntities[i].type);
 			realEntities[i].type = EMPTY;
 		}
 	}
@@ -264,7 +281,7 @@ void eachFrame(float delta)
 	//	printf("too fast!!!\n");
 
 	bool iDontCare = true;
-	for (int i = 0; i < linesSize; i++)
+	for (int i = 0; i < linesSize + doorsSize; i++)
 		newPosition = lineCircleCollideIterations(lines[i], player.position, newPosition, player.radius, collisionPrecision, iDontCare);
 	player.position = newPosition;
 
@@ -296,7 +313,7 @@ void eachFrame(float delta)
 	//entityAssemble(entities, realEntities, enemiesAmount, bulletBuffer);
 
 	curtime += delta;
-	updateEnemies(entities, totalEntities, lines, linesSize, delta);
+	updateEnemies(entities, totalEntities, lines, linesSize, doors, doorsSize, delta);
 	countEnemies = 0;
 	for (int i = 0; i < totalEntities; i++)
 	{
@@ -338,15 +355,23 @@ void eachFrame(float delta)
 		GameState = LEVELLOST;
 	}
 
+	for (int i = 0; i < doorsSize; i++)
+	{
+		if (doors[i].open)
+		{
+			lines[linesSize + i] = { {3e38f,3e38f }, {3e38f,3e38f } };
+		}
+	}
+
 	enemyPreRender(entities, totalEntities);
 
-	lineRender(lines, linesSize);
+	lineRender(lines, doors, linesSize, doorsSize);
 
 	//smokeRender(smkLines, smkLinesSize, lines, linesSize);
 
-	entityRender(entities, totalEntities, lines, linesSize);
+	entityRender(entities, totalEntities, lines, linesSize + doorsSize);
 
-	minimap(lines, linesSize, entities, totalEntities);
+	minimap(lines, linesSize + doorsSize, entities, totalEntities);
 
 	//ZHIR_drawCircleF(playerPosition, radius);
 }
@@ -356,7 +381,7 @@ void eachFrame(float delta)
 
 void ZHIR_updateButton(Button& button)
 {
-	SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+	SDL_SetRenderDrawColor(ren, 150, 0, 150, 255);
 
 	SDL_RenderFillRect(ren, &button.rect);
 	SDL_Rect rect = { button.rect.x + button.rect.w / 4, button.rect.y + button.rect.h / 4, button.rect.w / 2, button.rect.h / 2 };
