@@ -95,7 +95,29 @@ void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSi
 				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i].y);
 				SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i].y);
 
-				float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
+				//float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
+				float y = linePoints[i].y;
+				int j = i;
+				if (linePoints[i + 1].y <= linePoints[i].y)
+				{
+					j = i + 1;
+					y = linePoints[i + 1].y;
+				}
+				switch (lineIntersectionsID[j])
+				{
+				default:
+					SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				case RED:
+					SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				case GREEN:
+					SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				case BLUE:
+					SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+					break;
+				}
 				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, y, linePoints[i + 1].x, WIN_HEIGHT - y);
 			}
 			else if (linePoints[i + 1].x >= 0) //most left border
@@ -130,16 +152,16 @@ void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSi
 	free(lineIntersectionsID);
 }
 
-void renderImage(const Sprite* sprite, const SDL_FRect& fullRect, const SDL_FRect& cutRect)
+void renderImage(const Sprite* sprite, int frame, const SDL_FRect& fullRect, const SDL_FRect& cutRect)
 {
 	//rect fix
 	SDL_FRect fullRectFixed = fullRect;
 	fullRectFixed.w = abs(fullRectFixed.w);
 	fullRectFixed.x -= fullRectFixed.w;
 
-	fullRectFixed.x = (float)sprite->w * (cutRect.x - fullRectFixed.x) / fullRectFixed.w;
+	fullRectFixed.x = frame * sprite->frameSize + (float)sprite->frameSize * (cutRect.x - fullRectFixed.x) / fullRectFixed.w;
 	fullRectFixed.y = (float)sprite->h * (cutRect.y - fullRectFixed.y) / fullRectFixed.h;
-	fullRectFixed.w = (float)sprite->w * cutRect.w / fullRectFixed.w;
+	fullRectFixed.w = (float)sprite->frameSize * cutRect.w / fullRectFixed.w;
 	fullRectFixed.h = (float)sprite->h * cutRect.h / fullRectFixed.h;
 
 	SDL_Rect fullRectFixedI = ZHIR_FRectToRect(fullRectFixed);
@@ -210,13 +232,13 @@ void entityRender(Entity** entityArr, int entityArrSize, const ZHIR_LineF* lines
 			else
 			{
 				if (rect.w > 0)
-					renderImage(entityArr[k]->sprite, fullRect, rect);
+					renderImage(entityArr[k]->sprite, entityArr[k]->animFrame, fullRect, rect);
 				rect.x += rect.w;
 				rect.w = 0;
 			}
 		}
 		if (rect.w > 0)
-			renderImage(entityArr[k]->sprite, fullRect, rect);
+			renderImage(entityArr[k]->sprite, entityArr[k]->animFrame, fullRect, rect);
 	}
 }
 

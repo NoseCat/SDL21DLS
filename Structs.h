@@ -36,6 +36,8 @@ struct Sprite
 	SDL_Texture* texture;
 	int w;
 	int h;
+	int frames = 1;
+	int frameSize;
 };
 
 enum ColorCode { RED = 1, GREEN, BLUE };
@@ -46,7 +48,7 @@ struct Door
 	int id;
 };
 
-enum EnemyTypes { EMPTY, RUNNER, SHOOTER, PORTAL, BULLET, ENEMYBULLET, KEYCARDRED, KEYCARDGREEN, KEYCARDBLUE};
+enum EnemyTypes { EMPTY, RUNNER, SHOOTER, PORTAL, BULLET, ENEMYBULLET, KEYCARDRED, KEYCARDGREEN, KEYCARDBLUE, EXPLOSION};
 
 struct Entity
 {
@@ -75,6 +77,12 @@ struct Entity
 	float vertSize = 100;
 
 	bool active = false;
+
+	float fullAnimCycle = 5;
+	Timer anim = { false, fullAnimCycle };
+	int animFrame;
+
+	//animFrame = anim.time / (fullAnimCycle/sprite->frames)
 };
 
 #pragma endregion //STRUCTS
@@ -86,6 +94,9 @@ struct Entity
 //sprites
 extern Sprite sprite1;
 extern Sprite BulletSprite;
+extern Sprite PortalSprite;
+extern Sprite DemonRunnerSprite;
+extern Sprite explosionSprite;
 
 extern Player player;
 

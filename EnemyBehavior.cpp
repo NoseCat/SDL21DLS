@@ -81,7 +81,7 @@ static void enemyPortalBehavior(Entity* entityArr, int entityArrSize, Entity& en
 				entityArr[i].friction = 2000;
 				entityArr[i].radius = 200;
 				entityArr[i].vertSize = 400;
-				entityArr[i].accelVec = {0,0};
+				entityArr[i].accelVec = { 0,0 };
 				entityArr[i].active = true;
 				entityArr[i].sprite = &sprite1;
 
@@ -147,13 +147,20 @@ static void entityBulletBehavior(Entity& entity)
 //		entity.type = EMPTY;
 //}
 
-//bool, return collision with player
 void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* linesArr, int linesArrSize, Door* doorsArr, int doorsArrSize, float delta)
 {
 	for (int i = 0; i < entityArrSize; i++)
 	{
 		if (entityArr[i]->type == EMPTY)
 			continue;
+
+		if (entityArr[i]->active)
+		{
+			entityArr[i]->anim.time += delta;
+			if (entityArr[i]->anim.time > entityArr[i]->fullAnimCycle)
+				entityArr[i]->anim.time = 0;
+		}
+		entityArr[i]->animFrame = entityArr[i]->anim.time / (entityArr[i]->fullAnimCycle / entityArr[i]->sprite->frames);
 
 		//SDL_FPoint newPosition = ZHIR_vecSumF(entityArr[i].position, ZHIR_vecMultF(entityArr[i].dir, delta * entityArr[i].speed));
 
@@ -179,13 +186,14 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 		if (entityArr[i]->type == BULLET)
 			for (int j = 0; j < entityArrSize; j++)
 			{
-				if (entityArr[j]->type == EMPTY || i == j || entityArr[j]->type == BULLET || entityArr[j]->type == ENEMYBULLET)
+				if (entityArr[j]->type == EMPTY || i == j || entityArr[j]->type == BULLET || entityArr[j]->type == ENEMYBULLET || entityArr[j]->type == EXPLOSION)
 					continue;
 
 				newPosition = circleCircleCollideIterations(entityArr[j]->position, entityArr[j]->radius, entityArr[i]->position, newPosition, entityArr[i]->radius, 15, entCol);
 				//entColVec = ZHIR_vecSumF(ZHIR_vecSubF(newPosition, truePosition), entColVec);
 				if (entCol)
 				{
+					spawnExplosion(*(entityArr), entityArrSize, entityArr[i]->position, { 0,0 });
 					entityArr[i]->type = EMPTY;
 					printf("im hit! %i\n", entityArr[j]->type);
 					entityArr[j]->health -= player.bulletDamage;
@@ -222,7 +230,7 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 		if (!entityArr[i]->active && (entityArr[i]->type == RUNNER || entityArr[i]->type == SHOOTER || entityArr[i]->type == PORTAL))
 		{
 			entityArr[i]->active = true;
-			for (int j = 0; j < linesArrSize; j++)
+			for (int j = 0; j < linesArrSize + doorsArrSize; j++)
 			{
 				if (ZHIR_isIntersectF({ player.position, entityArr[i]->position }, linesArr[j]))
 				{
@@ -244,6 +252,7 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 			SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 			player.damageInv.active = true;
 			player.damageInv.time = 2;
+			spawnExplosion(*(entityArr), entityArrSize, entityArr[i]->position, { 0,0 });
 			entityArr[i]->type = EMPTY;
 		}
 		if (entityArr[i]->type == RUNNER &&
@@ -264,7 +273,10 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 		{
 			newPosition = lineCircleCollideIterations(linesArr[j], entityArr[i]->position, newPosition, entityArr[i]->radius, collisionPrecision, lineCol);
 			if (lineCol && (entityArr[i]->type == BULLET || entityArr[i]->type == ENEMYBULLET))
+			{
+				spawnExplosion(*(entityArr), entityArrSize, entityArr[i]->position, { 0,0 });
 				entityArr[i]->type = EMPTY;
+			}
 			lineColVec = ZHIR_vecSumF(ZHIR_vecSubF(newPosition, truePosition), lineColVec);
 		}
 
@@ -330,6 +342,12 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 			entityEnemyBulletBehavior(*(entityArr[i]));
 			break;
 
+		case EXPLOSION:
+			entityArr[i]->actionDelay.time -= delta;
+			if (entityArr[i]->actionDelay.time < 0)
+				entityArr[i]->type = EMPTY;
+			break;
+
 		default:
 			printf("strange enemy type\n");
 		}
@@ -340,6 +358,32 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 //{
 //	entityArr[index].type = EMPTY;
 //}
+
+void spawnExplosion(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FPoint speedVec)
+{
+	for (int i = 0; i < entityArrSize; i++)
+	{
+		if (entityArr[i].type == EMPTY)
+		{
+			entityArr[i].type = EXPLOSION;
+			entityArr[i].sprite = &explosionSprite;
+			entityArr[i].position = pos;
+			entityArr[i].speedLimit = 1;
+			entityArr[i].accel = 0;
+			entityArr[i].friction = 0;
+			entityArr[i].accelVec = {0,0};
+			entityArr[i].speedVec = { 0,0 };
+			entityArr[i].dir = { 0,0 };
+			entityArr[i].vertSize = 100;
+			entityArr[i].radius = 50;
+			entityArr[i].animFrame = 0;
+			entityArr[i].actionDelay.time = 0.5;
+			entityArr[i].fullAnimCycle = 0.5;
+			entityArr[i].anim = { false, 100 };
+			break;
+		}
+	}
+}
 
 void spawnBullet(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FPoint speedVec)
 {
@@ -358,6 +402,9 @@ void spawnBullet(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FPoin
 			entityArr[i].dir = ZHIR_vecNormal(speedVec);
 			entityArr[i].vertSize = 133;
 			entityArr[i].radius = 133;
+			entityArr[i].animFrame = 0;
+			entityArr[i].fullAnimCycle = 1;
+			entityArr[i].anim = { false, 100 };
 			break;
 		}
 	}
@@ -380,6 +427,9 @@ void spawnEnemyBullet(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_
 			entityArr[i].dir = ZHIR_vecNormal(speedVec);
 			entityArr[i].vertSize = 100;
 			entityArr[i].radius = 100;
+			entityArr[i].animFrame = 0;
+			entityArr[i].fullAnimCycle = 1;
+			entityArr[i].anim = { false, 100 };
 			break;
 		}
 	}

@@ -53,6 +53,9 @@ int doorsSize = 0;
 
 Sprite sprite1;
 Sprite BulletSprite;
+Sprite PortalSprite;
+Sprite DemonRunnerSprite;
+Sprite explosionSprite;
 
 SDL_Rect startButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect exitButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
@@ -78,7 +81,7 @@ void texturefromtext(Button& button, const char* text, TTF_Font* my_font, SDL_Co
 	SDL_FreeSurface(textSurface);
 }
 
-void spritefromimage(Sprite& sprite, const char* sprtname)
+void spritefromimage(Sprite& sprite, const char* sprtname, int frames)
 {
 	SDL_Surface* textureSurface = IMG_Load(sprtname);
 	if (textureSurface == NULL)
@@ -87,12 +90,11 @@ void spritefromimage(Sprite& sprite, const char* sprtname)
 		system("pause");
 		exit(1);
 	}
-	sprite =
-	{
-		SDL_CreateTextureFromSurface(ren, textureSurface),
-		textureSurface->w,
-		textureSurface->h
-	};
+	sprite.texture = SDL_CreateTextureFromSurface(ren, textureSurface);
+	sprite.w = textureSurface->w;
+	sprite.h = textureSurface->h;
+	sprite.frames = frames;
+	sprite.frameSize = sprite.w / frames;
 	SDL_FreeSurface(textureSurface);
 }
 
@@ -117,8 +119,11 @@ void globalOnStart()
 	TTF_CloseFont(my_font);
 	TTF_Quit();
 
-	spritefromimage(sprite1, "NoseCat.png");
-	spritefromimage(BulletSprite, "bullet.png");
+	spritefromimage(DemonRunnerSprite, "RunnerDemon.png", 4);
+	spritefromimage(sprite1, "NoseCat.png", 1);
+	spritefromimage(BulletSprite, "bullet.png", 1);
+	spritefromimage(PortalSprite, "Portal.png", 1);
+	spritefromimage(explosionSprite, "explosion.png", 3);
 }
 
 char* curlevel;
@@ -167,8 +172,21 @@ void onLevelStart(const char* levelname)
 
 	for (int i = 0; i < totalEntities; i++)
 	{
-		realEntities[i].sprite = &sprite1;
+		switch (realEntities[i].type)
+		{
+		case RUNNER:
+			realEntities[i].sprite = &DemonRunnerSprite;
+			break;
+		case PORTAL:
+			realEntities[i].sprite = &PortalSprite;
+			break;
+		default:
+			realEntities[i].sprite = &sprite1;
+		}
+		//realEntities[i].radius = 5 * realEntities[i].sprite->w / 2 ;
+		//realEntities[i].vertSize = 5 * realEntities[i].sprite->h;
 	}
+
 	for (int i = 0; i < totalEntities; i++)
 	{
 		if (realEntities[i].type != SHOOTER && realEntities[i].type != RUNNER && realEntities[i].type != PORTAL
@@ -292,7 +310,11 @@ void eachFrame(float delta)
 		for (int i = 0; i < totalEntities; i++)
 		{
 			if ((entities[i]->type == RUNNER || entities[i]->type == SHOOTER || entities[i]->type == PORTAL) && ZHIR_isIntersectF(entities[i]->face1, { player.position, rayCast }))
+			{
 				entities[i]->health -= 2 * player.bulletDamage;
+				spawnExplosion(*(entities), totalEntities, ZHIR_vecSumF(entities[i]->position, {(float)(rand()%(int)(entities[i]->radius/2)),(float)(rand() % (int)(entities[i]->radius / 2))}), {0,0});
+				spawnExplosion(*(entities), totalEntities, ZHIR_vecSumF(entities[i]->position, {(float)(rand()%(int)(entities[i]->radius/2)),(float)(rand() % (int)(entities[i]->radius / 2))}), {0,0});
+			}
 		}
 		player.shotDelay.active = true;
 		player.shotDelay.time = 0.8;
@@ -349,11 +371,10 @@ void eachFrame(float delta)
 		if (curtime < bestLevelTime || bestLevelTime < 0)
 		{
 			FILE* levelWrite;
-			/*if (fopen_s(&levelWrite, curlevel, "ab") != 0)
-				exit(1);*/
-				//fseek(levelWrite, 0, SEEK_SET);
-				//fwrite(&curtime, sizeof(float), 1, levelWrite);
-				//fclose(levelWrite);
+			if (fopen_s(&levelWrite, curlevel, "rb+") != 0)
+				exit(1);
+			fwrite(&curtime, sizeof(float), 1, levelWrite);
+			fclose(levelWrite);
 			bestLevelTime = curtime;
 		}
 		TTF_Font* my_font = TTF_OpenFont("Text.ttf", 100);
