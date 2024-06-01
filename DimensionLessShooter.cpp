@@ -19,6 +19,11 @@ float aerialLowerBorder = 25.0f; //how thin lines get (0 - 255)
 int collisionPrecision = 15;
 int bulletBuffer = 50;
 
+const int maxAmmo = 5;
+int ammo = maxAmmo;
+float reloadDuration = 3;
+Timer reload = { false, reloadDuration };
+
 float curtime = 0;
 float bestLevelTime;
 Entity* realEntities = nullptr;
@@ -56,6 +61,20 @@ Sprite BulletSprite;
 Sprite PortalSprite;
 Sprite DemonRunnerSprite;
 Sprite explosionSprite;
+Sprite explosionSprite2;
+Sprite gunLsprite;
+Sprite gunRsprite;
+
+Sprite face1;
+Sprite face2;
+Sprite face3;
+Sprite face4;
+Sprite face5;
+Sprite* face;
+
+const float shotDelay = 1;
+const float handAnimTime = shotDelay * 4 / 5;
+Timer handAnim = { false, handAnimTime };
 
 SDL_Rect startButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect exitButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
@@ -119,16 +138,28 @@ void globalOnStart()
 	TTF_CloseFont(my_font);
 	TTF_Quit();
 
-	spritefromimage(DemonRunnerSprite, "RunnerDemon.png", 4);
-	spritefromimage(sprite1, "NoseCat.png", 1);
-	spritefromimage(BulletSprite, "bullet.png", 1);
-	spritefromimage(PortalSprite, "Portal.png", 1);
-	spritefromimage(explosionSprite, "explosion.png", 3);
+	spritefromimage(DemonRunnerSprite, "sprites\\RunnerDemon.png", 4);
+	spritefromimage(sprite1, "sprites\\NoseCat.png", 1);
+	spritefromimage(BulletSprite, "sprites\\bullet.png", 1);
+	spritefromimage(PortalSprite, "sprites\\Portal.png", 1);
+	spritefromimage(explosionSprite, "sprites\\explosion.png", 3);
+	spritefromimage(explosionSprite2, "sprites\\explosion2.png", 4);
+	spritefromimage(gunLsprite, "sprites\\gunL.png", 3);
+	spritefromimage(gunRsprite, "sprites\\gunR.png", 2);
+
+	spritefromimage(face1, "sprites\\face1.png", 3);
+	spritefromimage(face2, "sprites\\face2.png", 3);
+	spritefromimage(face3, "sprites\\face3.png", 3);
+	spritefromimage(face4, "sprites\\face4.png", 3);
+	spritefromimage(face5, "sprites\\face5.png", 3);
+
 }
 
 char* curlevel;
 void onLevelStart(const char* levelname)
 {
+	ammo = maxAmmo;
+	handAnim = { false, handAnimTime };
 	player.position = { 0, 0 };
 	player.accelVec = { 0,0 };
 	player.speedVec = { 0,0 };
@@ -176,6 +207,7 @@ void onLevelStart(const char* levelname)
 		{
 		case RUNNER:
 			realEntities[i].sprite = &DemonRunnerSprite;
+			realEntities[i].fullAnimCycle = 1.5;
 			break;
 		case PORTAL:
 			realEntities[i].sprite = &PortalSprite;
@@ -303,29 +335,35 @@ void eachFrame(float delta)
 		newPosition = lineCircleCollideIterations(lines[i], player.position, newPosition, player.radius, collisionPrecision, iDontCare);
 	player.position = newPosition;
 
-	if (input_LMB && input_RMB && !player.shotDelay.active)
+	if (input_LMB && input_RMB && !player.shotDelay.active && ammo > 0 && !reload.active)
 	{
+		ammo--;
+		handAnim.active = true;
+		handAnim.time = handAnimTime - handAnimTime / gunRsprite.frames;
 		SDL_FPoint rayCast = ZHIR_vecSumF(player.position, ZHIR_rotateOnDegreeF({ 0, -viewDistance }, { 0,0 }, player.lFOV + 180 - player.FOV / 2));
-		SDL_RenderDrawLine(ren, WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2, WIN_HEIGHT);
+		//SDL_RenderDrawLine(ren, WIN_WIDTH / 2, WIN_HEIGHT / 2, WIN_WIDTH / 2, WIN_HEIGHT);
 		for (int i = 0; i < totalEntities; i++)
 		{
 			if ((entities[i]->type == RUNNER || entities[i]->type == SHOOTER || entities[i]->type == PORTAL) && ZHIR_isIntersectF(entities[i]->face1, { player.position, rayCast }))
 			{
 				entities[i]->health -= 2 * player.bulletDamage;
-				spawnExplosion(*(entities), totalEntities, ZHIR_vecSumF(entities[i]->position, {(float)(rand()%(int)(entities[i]->radius/2)),(float)(rand() % (int)(entities[i]->radius / 2))}), {0,0});
-				spawnExplosion(*(entities), totalEntities, ZHIR_vecSumF(entities[i]->position, {(float)(rand()%(int)(entities[i]->radius/2)),(float)(rand() % (int)(entities[i]->radius / 2))}), {0,0});
+				spawnExplosion(*(entities), totalEntities, ZHIR_vecSumF(entities[i]->position, { (float)(rand() % (int)(entities[i]->radius / 2)),(float)(rand() % (int)(entities[i]->radius / 2)) }), { 0,0 });
+				spawnExplosion(*(entities), totalEntities, ZHIR_vecSumF(entities[i]->position, { (float)(rand() % (int)(entities[i]->radius / 2)),(float)(rand() % (int)(entities[i]->radius / 2)) }), { 0,0 });
 			}
 		}
 		player.shotDelay.active = true;
-		player.shotDelay.time = 0.8;
+		player.shotDelay.time = shotDelay - handAnimTime / gunRsprite.frames;
 	}
-	if (input_LMB && !player.shotDelay.active)
+	if (input_LMB && !player.shotDelay.active && ammo > 0 && !reload.active)
 	{
+		ammo--;
+		handAnim.active = true;
+		handAnim.time = handAnimTime - handAnimTime / gunLsprite.frames;
 		spawnBullet(realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, player.lFOV + 180 - player.FOV / 2));
 		spawnBullet(realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, 15 + player.lFOV + 180 - player.FOV / 2));
 		spawnBullet(realEntities, totalEntities, player.position, ZHIR_rotateOnDegreeF({ 0, -5000 }, { 0,0 }, -15 + player.lFOV + 180 - player.FOV / 2));
 		player.shotDelay.active = true;
-		player.shotDelay.time = 1;
+		player.shotDelay.time = shotDelay - handAnimTime / gunLsprite.frames;
 	}
 	ZHIR_timerTickDown(player.shotDelay, delta);
 	if (player.damageInv.active)
@@ -352,6 +390,69 @@ void eachFrame(float delta)
 	//smokeRender(smkLines, smkLinesSize, lines, linesSize);
 
 	entityRender(entities, totalEntities, lines, linesSize + doorsSize);
+
+
+
+	if (/*(ammo < 0 && input_LMB) ||*/ input_R || reload.active)
+	{
+		//ammo = 0;
+		reload.active = true;
+		if (ZHIR_timerTickDown(reload, delta))
+		{
+			reload.active = false;
+			reload.time = reloadDuration;
+			ammo = maxAmmo;
+		}
+	}
+
+	face = &face1;
+	if (player.health <= 80)
+		face = &face2;
+	if (player.health <= 60)
+		face = &face3;
+	if (player.health <= 40)
+		face = &face4;
+	if (player.health <= 20)
+		face = &face5;
+
+	static float facetime = 0;
+	facetime += delta;
+	if (facetime > 10)
+		facetime = 0;
+	SDL_Rect faceFullRect = { 0, 0, face->frameSize, face->h };
+	SDL_Rect faceSrcRect = { face->frameSize * (int)(facetime / (10.0f / face->frames)), 0, face->frameSize, face->h };
+	SDL_RenderCopy(ren, face->texture, &faceSrcRect, &faceFullRect);
+
+	if (handAnim.time <= delta)
+		handAnim.active = false;
+	if (handAnim.active)
+		handAnim.time -= delta;
+	else
+		handAnim.time = handAnimTime;
+
+	if (!reload.active)
+		if (input_RMB)
+		{
+			SDL_Rect FullRect = { WIN_CENTER.x + 5 - explosionSprite2.frameSize / 2, WIN_HEIGHT - gunRsprite.h * 2 - explosionSprite2.h / 2, explosionSprite2.frameSize, explosionSprite2.h };
+			SDL_Rect srcRect = { explosionSprite2.frameSize * (int)((handAnimTime - handAnim.time) / (handAnimTime / explosionSprite2.frames)), 0, explosionSprite2.frameSize, explosionSprite2.h };
+			if (handAnim.active)
+				SDL_RenderCopy(ren, explosionSprite2.texture, &srcRect, &FullRect);
+			// +11 so the gun is in the center
+			FullRect = { WIN_CENTER.x - gunRsprite.frameSize * 2 / 2 + 11, WIN_HEIGHT - gunRsprite.h * 2, gunRsprite.frameSize * 2, gunRsprite.h * 2 };
+			srcRect = { gunRsprite.frameSize * (int)((handAnimTime - handAnim.time) / (handAnimTime / gunRsprite.frames)), 0, gunRsprite.frameSize, gunRsprite.h };
+			SDL_RenderCopy(ren, gunRsprite.texture, &srcRect, &FullRect);
+		}
+		else
+		{
+			SDL_Rect FullRect = { WIN_WIDTH - gunLsprite.frameSize * 2 - WIN_WIDTH / 4 - explosionSprite2.frameSize / 2,WIN_HEIGHT - gunLsprite.h * 2 - explosionSprite2.h / 2, explosionSprite2.frameSize, explosionSprite2.h };
+			SDL_Rect srcRect = { explosionSprite2.frameSize * (int)((handAnimTime - handAnim.time) / (handAnimTime / explosionSprite2.frames)), 0, explosionSprite2.frameSize, explosionSprite2.h };
+			if (handAnim.active)
+				SDL_RenderCopy(ren, explosionSprite2.texture, &srcRect, &FullRect);
+			FullRect = { WIN_WIDTH - gunLsprite.frameSize * 2 - WIN_WIDTH / 4, WIN_HEIGHT - gunLsprite.h * 2, gunLsprite.frameSize * 2, gunLsprite.h * 2 };
+			srcRect = { gunLsprite.frameSize * (int)((handAnimTime - handAnim.time) / (handAnimTime / gunLsprite.frames)), 0, gunLsprite.frameSize, gunLsprite.h };
+			SDL_RenderCopy(ren, gunLsprite.texture, &srcRect, &FullRect);
+		}
+
 
 	minimap(lines, linesSize + doorsSize, entities, totalEntities);
 
@@ -424,30 +525,30 @@ void levelSelectEachFrame()
 	ZHIR_updateButton(customB);
 	if (level1B.pressed)
 	{
-		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
-		strcpy_s(curlevel, 20, "level1.bin");
-		onLevelStart("level1.bin");
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 30);
+		strcpy_s(curlevel, 30, "gamelevels\\level1.bin");
+		onLevelStart("gamelevels\\level1.bin");
 		GameState = GAME;
 	}
 	if (level2B.pressed)
 	{
-		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
-		strcpy_s(curlevel, 20, "level2.bin");
-		onLevelStart("level2.bin");
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 30);
+		strcpy_s(curlevel, 30, "gamelevels\\level2.bin");
+		onLevelStart("gamelevels\\level2.bin");
 		GameState = GAME;
 	}
 	if (level3B.pressed)
 	{
-		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
-		strcpy_s(curlevel, 20, "level3.bin");
-		onLevelStart("level3.bin");
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 30);
+		strcpy_s(curlevel, 30, "gamelevels\\level3.bin");
+		onLevelStart("gamelevels\\level3.bin");
 		GameState = GAME;
 	}
 	if (customB.pressed)
 	{
-		curlevel = (char*)realloc(curlevel, sizeof(char) * 20);
-		strcpy_s(curlevel, 20, "custom.bin");
-		onLevelStart("custom.bin");
+		curlevel = (char*)realloc(curlevel, sizeof(char) * 30);
+		strcpy_s(curlevel, 30, "gamelevels\\custom.bin");
+		onLevelStart("gamelevels\\custom.bin");
 		GameState = GAME;
 	}
 }

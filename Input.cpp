@@ -10,6 +10,8 @@ bool input_UP = false;
 bool input_DOWN = false;
 bool input_LEFT = false;
 bool input_RIGHT = false;
+bool input_R = false;
+
 SDL_FPoint InputDir = {0, 0};
 void inputUpdate()
 {

@@ -14,6 +14,7 @@ extern bool input_UP;
 extern bool input_DOWN;
 extern bool input_LEFT;
 extern bool input_RIGHT;
+extern bool input_R;
 
 extern SDL_FPoint InputDir;
 

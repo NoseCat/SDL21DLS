@@ -76,6 +76,9 @@ int main(int argc, char* argv[])
 				case SDL_SCANCODE_RIGHT:
 					input_RIGHT = true;
 					break;
+				case SDL_SCANCODE_R:
+					input_R = true;
+					break;
 				}
 				break;
 			case SDL_KEYUP:
@@ -96,6 +99,9 @@ int main(int argc, char* argv[])
 				case SDL_SCANCODE_D:
 				case SDL_SCANCODE_RIGHT:
 					input_RIGHT = false;
+					break;
+				case SDL_SCANCODE_R:
+					input_R = false;
 					break;
 				}
 				break;
