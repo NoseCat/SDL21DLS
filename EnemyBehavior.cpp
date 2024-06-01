@@ -83,7 +83,10 @@ static void enemyPortalBehavior(Entity* entityArr, int entityArrSize, Entity& en
 				entityArr[i].vertSize = 400;
 				entityArr[i].accelVec = { 0,0 };
 				entityArr[i].active = true;
-				entityArr[i].sprite = &sprite1;
+				entityArr[i].sprite = &DemonRunnerSprite;
+				entityArr[i].fullAnimCycle = 1.5;
+				entityArr[i].anim = { false,  entityArr[i].fullAnimCycle };
+				entityArr[i].animFrame = 0;
 
 				break;
 			}
@@ -186,7 +189,10 @@ void updateEnemies(Entity** entityArr, int entityArrSize, const ZHIR_LineF* line
 		if (entityArr[i]->type == BULLET)
 			for (int j = 0; j < entityArrSize; j++)
 			{
-				if (entityArr[j]->type == EMPTY || i == j || entityArr[j]->type == BULLET || entityArr[j]->type == ENEMYBULLET || entityArr[j]->type == EXPLOSION)
+				if (entityArr[j]->type == EMPTY || i == j 
+					|| entityArr[j]->type == BULLET || entityArr[j]->type == ENEMYBULLET 
+					|| entityArr[j]->type == EXPLOSION || entityArr[j]->type == KEYCARDRED 
+					|| entityArr[j]->type == KEYCARDGREEN || entityArr[j]->type == KEYCARDBLUE)
 					continue;
 
 				newPosition = circleCircleCollideIterations(entityArr[j]->position, entityArr[j]->radius, entityArr[i]->position, newPosition, entityArr[i]->radius, 15, entCol);
@@ -371,7 +377,7 @@ void spawnExplosion(Entity* entityArr, int entityArrSize, SDL_FPoint pos, SDL_FP
 			entityArr[i].speedLimit = 1;
 			entityArr[i].accel = 0;
 			entityArr[i].friction = 0;
-			entityArr[i].accelVec = {0,0};
+			entityArr[i].accelVec = { 0,0 };
 			entityArr[i].speedVec = { 0,0 };
 			entityArr[i].dir = { 0,0 };
 			entityArr[i].vertSize = 100;

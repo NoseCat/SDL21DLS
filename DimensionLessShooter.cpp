@@ -138,10 +138,10 @@ void globalOnStart()
 	TTF_CloseFont(my_font);
 	TTF_Quit();
 
-	spritefromimage(DemonRunnerSprite, "sprites\\RunnerDemon.png", 4);
 	spritefromimage(sprite1, "sprites\\NoseCat.png", 1);
+	spritefromimage(DemonRunnerSprite, "sprites\\RunnerDemon.png", 4);
 	spritefromimage(BulletSprite, "sprites\\bullet.png", 1);
-	spritefromimage(PortalSprite, "sprites\\Portal.png", 1);
+	spritefromimage(PortalSprite, "sprites\\Portal.png", 3);
 	spritefromimage(explosionSprite, "sprites\\explosion.png", 3);
 	spritefromimage(explosionSprite2, "sprites\\explosion2.png", 4);
 	spritefromimage(gunLsprite, "sprites\\gunL.png", 3);
@@ -211,9 +211,12 @@ void onLevelStart(const char* levelname)
 			break;
 		case PORTAL:
 			realEntities[i].sprite = &PortalSprite;
+			realEntities[i].fullAnimCycle = 2.5;
 			break;
 		default:
 			realEntities[i].sprite = &sprite1;
+			realEntities[i].animFrame = 0;
+			realEntities[i].anim = { false, 0 };
 		}
 		//realEntities[i].radius = 5 * realEntities[i].sprite->w / 2 ;
 		//realEntities[i].vertSize = 5 * realEntities[i].sprite->h;
