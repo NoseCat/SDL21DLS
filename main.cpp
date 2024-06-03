@@ -140,6 +140,9 @@ int main(int argc, char* argv[])
 		case EXIT:
 			RUN = false;
 			break;
+		case AUTHOR:
+			authorEachFrame();
+			break;
 		default:
 			printf("gameState error\n");
 		}

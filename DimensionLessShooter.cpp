@@ -57,6 +57,7 @@ int doorsSize = 0;
 //int smkBounces = 5;
 
 Sprite sprite1;
+Sprite Shoot;
 Sprite BulletSprite;
 Sprite PortalSprite;
 Sprite DemonRunnerSprite;
@@ -64,6 +65,12 @@ Sprite explosionSprite;
 Sprite explosionSprite2;
 Sprite gunLsprite;
 Sprite gunRsprite;
+Sprite Reloading;
+Sprite author;
+
+Sprite KeycardRed;
+Sprite KeycardGreen;
+Sprite KeycardBlue;
 
 Sprite face1;
 Sprite face2;
@@ -82,10 +89,12 @@ Button startB = { startButton , false, nullptr };
 Button exitB = { exitButton , false , nullptr };
 Button againB = { startButton , false, nullptr };
 
+SDL_Rect authorButton = { WIN_WIDTH - WIN_WIDTH / 12 - WIN_WIDTH / 8, WIN_HEIGHT - WIN_HEIGHT / 12 - WIN_HEIGHT / 16, WIN_WIDTH / 8 ,WIN_HEIGHT / 16 };
 SDL_Rect level1Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect level2Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect level3Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6 + level1Button.x + level1Button.w, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
 SDL_Rect customButton = { WIN_WIDTH / 4 - WIN_WIDTH / 6 + level1Button.x + level1Button.w, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
+Button authorB = { authorButton , false, nullptr };
 Button level1B = { level1Button , false, nullptr };
 Button level2B = { level2Button , false , nullptr };
 Button level3B = { level3Button , false, nullptr };
@@ -127,6 +136,7 @@ void globalOnStart()
 	texturefromtext(startB, "play\0", my_font, fore_color, back_color);
 	texturefromtext(exitB, "exit\0", my_font, fore_color, back_color);
 	texturefromtext(againB, "again\0", my_font, fore_color, back_color);
+	texturefromtext(authorB, "author\0", my_font, fore_color, back_color);
 
 	texturefromtext(level1B, "level 1\0", my_font, fore_color, back_color);
 	texturefromtext(level2B, "level 2\0", my_font, fore_color, back_color);
@@ -146,6 +156,12 @@ void globalOnStart()
 	spritefromimage(explosionSprite2, "sprites\\explosion2.png", 4);
 	spritefromimage(gunLsprite, "sprites\\gunL.png", 3);
 	spritefromimage(gunRsprite, "sprites\\gunR.png", 2);
+	spritefromimage(Shoot, "sprites\\1.png", 1);
+	spritefromimage(Reloading, "sprites\\CircleReload.png", 5);
+
+	spritefromimage(KeycardRed, "sprites\\KeycardRed.png", 1);
+	spritefromimage(KeycardGreen, "sprites\\KeycardGreen.png", 1);
+	spritefromimage(KeycardBlue, "sprites\\KeycardBlue.png", 1);
 
 	spritefromimage(face1, "sprites\\face1.png", 3);
 	spritefromimage(face2, "sprites\\face2.png", 3);
@@ -153,6 +169,7 @@ void globalOnStart()
 	spritefromimage(face4, "sprites\\face4.png", 3);
 	spritefromimage(face5, "sprites\\face5.png", 3);
 
+	spritefromimage(author, "sprites\\authors.png", 1);
 }
 
 char* curlevel;
@@ -205,6 +222,27 @@ void onLevelStart(const char* levelname)
 	{
 		switch (realEntities[i].type)
 		{
+		case KEYCARDRED:
+			realEntities[i].sprite = &KeycardRed;
+			realEntities[i].animFrame = 0;
+			realEntities[i].anim = { false, 0 };
+			realEntities[i].vertSize *= 1.5;
+			break;
+		case KEYCARDGREEN:
+			realEntities[i].sprite = &KeycardGreen;
+			realEntities[i].animFrame = 0;
+			realEntities[i].anim = { false, 0 };
+			realEntities[i].vertSize *= 1.5;
+			break;
+		case KEYCARDBLUE:
+			realEntities[i].sprite = &KeycardBlue;
+			realEntities[i].animFrame = 0;
+			realEntities[i].anim = { false, 0 };
+			realEntities[i].vertSize *= 1.5;
+			break;
+		case SHOOTER:
+			realEntities[i].sprite = &Shoot;
+			break;
 		case RUNNER:
 			realEntities[i].sprite = &DemonRunnerSprite;
 			realEntities[i].fullAnimCycle = 1.5;
@@ -400,6 +438,9 @@ void eachFrame(float delta)
 	{
 		//ammo = 0;
 		reload.active = true;
+		SDL_Rect FullRect = { WIN_CENTER.x - Reloading.frameSize * 2 / 2, WIN_HEIGHT - Reloading.h * 2, Reloading.frameSize * 2, Reloading.h * 2};
+		SDL_Rect srcRect = { Reloading.frameSize * (int)((reloadDuration - reload.time) / (reloadDuration / Reloading.frames)), 0, Reloading.frameSize, Reloading.h };
+		SDL_RenderCopy(ren, Reloading.texture, &srcRect, &FullRect);
 		if (ZHIR_timerTickDown(reload, delta))
 		{
 			reload.active = false;
@@ -436,7 +477,7 @@ void eachFrame(float delta)
 	if (!reload.active)
 		if (input_RMB)
 		{
-			SDL_Rect FullRect = { WIN_CENTER.x + 5 - explosionSprite2.frameSize / 2, WIN_HEIGHT - gunRsprite.h * 2 - explosionSprite2.h / 2, explosionSprite2.frameSize, explosionSprite2.h };
+			SDL_Rect FullRect = { WIN_CENTER.x + 11 / 2 - explosionSprite2.frameSize / 2, WIN_HEIGHT - gunRsprite.h * 2 - explosionSprite2.h / 2, explosionSprite2.frameSize, explosionSprite2.h };
 			SDL_Rect srcRect = { explosionSprite2.frameSize * (int)((handAnimTime - handAnim.time) / (handAnimTime / explosionSprite2.frames)), 0, explosionSprite2.frameSize, explosionSprite2.h };
 			if (handAnim.active)
 				SDL_RenderCopy(ren, explosionSprite2.texture, &srcRect, &FullRect);
@@ -556,10 +597,28 @@ void levelSelectEachFrame()
 	}
 }
 
+void authorEachFrame()
+{
+	SDL_Rect r = { WIN_CENTER.x - author.w * 1.5 / 2, WIN_CENTER.y /1.5 - author.h * 1.5 /2 , author.w * 1.5, author.h * 1.5 };
+	SDL_Rect sr = { 0, 0, author.w, author.h };
+	int temp = exitB.rect.y;
+	exitB.rect.y = WIN_HEIGHT - exitB.rect.h - WIN_HEIGHT / 12;
+	SDL_RenderCopy(ren, author.texture, &sr, &r);
+	ZHIR_updateButton(exitB);
+	exitB.rect.y = temp;
+	if (exitB.pressed)
+	{
+		input_LMB = false;
+		exitB.pressed = false;
+		GameState = MENU;
+	}
+}
+
 void mainMenuEachFrame()
 {
 	ZHIR_updateButton(startB);
 	ZHIR_updateButton(exitB);
+	ZHIR_updateButton(authorB);
 	if (startB.pressed)
 	{
 		input_LMB = false;
@@ -567,6 +626,9 @@ void mainMenuEachFrame()
 	}
 	if (exitB.pressed)
 		GameState = EXIT;
+	if(authorB.pressed)
+		GameState = AUTHOR;
+
 }
 
 void winLevelEachFrame()

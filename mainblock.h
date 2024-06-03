@@ -2,7 +2,7 @@
 #ifndef _MAIN_BLOCK_
 #define _MAIN_BLOCK_
 
-enum GameStates { MENU, LEVELSELECT, GAME, PAUSED, EXIT, LEVELWIN, LEVELLOST};
+enum GameStates { MENU, LEVELSELECT, GAME, PAUSED, EXIT, LEVELWIN, LEVELLOST, AUTHOR};
 extern int GameState;
 
 //Вызывается на запуске программы
@@ -18,6 +18,8 @@ void mainMenuEachFrame();
 void winLevelEachFrame();
 
 void lostLevelEachFrame();
+
+void authorEachFrame();
 
 void eachFrame(float delta);
 
