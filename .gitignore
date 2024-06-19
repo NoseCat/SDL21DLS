@@ -16,10 +16,10 @@
 # Mono auto generated files
 mono_crash.*
 
+
 Dimensio.5cead6d9/
 gamelevels/
 sprites/
-*.ttf
 
 # Build results
 [Dd]ebugPublic/
@@ -73,6 +73,9 @@ ScaffoldingReadMe.txt
 
 # StyleCop
 StyleCopReport.xml
+
+
+*.ttf
 
 # Files built by Visual Studio
 *_i.c
