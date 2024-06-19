@@ -10,7 +10,6 @@ int GameState;
 Player player;
 
 //settings
-//float mouseSensetivity = 15.0f;
 float mouseSensetivity = 15.0f;
 float rayPrecision = 0.1f;
 float wallSize = 500.0f; //affects visual vertical wall size
