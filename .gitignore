@@ -17,12 +17,17 @@
 mono_crash.*
 
 Dimensio.5cead6d9/
+gamelevels/
+sprites/
+*.ttf
 
 # Build results
 [Dd]ebugPublic/
+[Dd]ebug/
 [Rr]elease/
 [Rr]eleases/
 x86/
+x64/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/

@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dimension Less Shooter", "Dimension Less Shooter.vcxproj", "{5CEAD6D9-E464-40EB-AAE2-6B1FD74DF32D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDL21DLS quick level editor", "..\SDL21DLS quick level editor\SDL21DLS quick level editor.vcxproj", "{5620DEA7-A6ED-4C83-835D-53CAA7873AA9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDL21DLS quick level editor", "SDL21DLS quick level editor\SDL21DLS quick level editor.vcxproj", "{5620DEA7-A6ED-4C83-835D-53CAA7873AA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
