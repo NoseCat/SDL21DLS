@@ -137,16 +137,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="..\Input.cpp" />
+    <ClCompile Include="..\SDLstuff.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SDL21DLS quick level editor.cpp" />
-    <ClCompile Include="SDLstuff.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Input.h" />
     <ClInclude Include="mainblock.h" />
-    <ClInclude Include="SDLstuff.h" />
-    <ClInclude Include="Structs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

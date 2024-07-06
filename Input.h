@@ -10,6 +10,7 @@ extern SDL_FPoint MousePosRel;
 
 extern bool input_LMB;
 extern bool input_RMB;
+extern bool input_MMB;
 extern bool input_UP;
 extern bool input_DOWN;
 extern bool input_LEFT;

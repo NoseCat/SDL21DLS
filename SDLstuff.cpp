@@ -8,7 +8,7 @@ int WIN_WIDTH = 1280;
 int WIN_HEIGHT = 720;
 SDL_Point WIN_CENTER = { WIN_WIDTH / 2, WIN_HEIGHT / 2 };
 
-float FRAMES = 1000 / 60;
+float FRAMES = 1000 / 60; //FRAMES is in ms
 SDL_Renderer* ren = NULL;
 SDL_Window* win = NULL;
 
@@ -29,7 +29,7 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
-	printf("SDL init succ\n");
+	printf("SDL init\n");
 
 	int res;
 	res = IMG_Init(IMG_INIT_PNG);
@@ -39,8 +39,8 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
-	printf("IMG init succ\n");
-	if (res & IMG_INIT_PNG) printf("\tpng init succ\n"); else printf("no png init :(\n");
+	printf("IMG init\n");
+	if (res & IMG_INIT_PNG) printf("\tpng init\n"); else printf("no png init :(\n");
 
 	if (TTF_Init())
 	{
@@ -48,7 +48,7 @@ void Init()
 		system("pause");
 		deInit(1);
 	}
-	printf("TTF init succ\n");
+	printf("TTF init\n");
 
 	win = SDL_CreateWindow("SDL21DLS",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIN_WIDTH, WIN_HEIGHT,

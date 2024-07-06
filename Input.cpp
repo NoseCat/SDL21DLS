@@ -6,6 +6,7 @@ SDL_FPoint lastMousePosRel = { 0,0 };
 
 bool input_LMB = false;
 bool input_RMB = false;
+bool input_MMB = false;
 bool input_UP = false;
 bool input_DOWN = false;
 bool input_LEFT = false;

@@ -61,19 +61,15 @@ int main(int argc, char* argv[])
 				switch (ev.key.keysym.scancode)
 				{
 				case SDL_SCANCODE_W:
-				case SDL_SCANCODE_UP:
 					input_UP = true;
 					break;
 				case SDL_SCANCODE_A:
-				case SDL_SCANCODE_LEFT:
 					input_LEFT = true;
 					break;
 				case SDL_SCANCODE_S:
-				case SDL_SCANCODE_DOWN:
 					input_DOWN = true;
 					break;
 				case SDL_SCANCODE_D:
-				case SDL_SCANCODE_RIGHT:
 					input_RIGHT = true;
 					break;
 				case SDL_SCANCODE_R:
@@ -85,19 +81,15 @@ int main(int argc, char* argv[])
 				switch (ev.key.keysym.scancode)
 				{
 				case SDL_SCANCODE_W:
-				case SDL_SCANCODE_UP:
 					input_UP = false;
 					break;
 				case SDL_SCANCODE_A:
-				case SDL_SCANCODE_LEFT:
 					input_LEFT = false;
 					break;
 				case SDL_SCANCODE_S:
-				case SDL_SCANCODE_DOWN:
 					input_DOWN = false;
 					break;
 				case SDL_SCANCODE_D:
-				case SDL_SCANCODE_RIGHT:
 					input_RIGHT = false;
 					break;
 				case SDL_SCANCODE_R:
@@ -109,14 +101,15 @@ int main(int argc, char* argv[])
 		}
 
 		newtime = SDL_GetTicks();
-		delta = (newtime - lasttime) / 1000.0f;
+		delta = newtime - lasttime;
 		if (delta < FRAMES)
 		{
 			SDL_Delay(FRAMES - delta);
 			newtime = SDL_GetTicks();
-			delta = (newtime - lasttime) / 1000.0f;
+			delta = newtime - lasttime;
 		}
 		lasttime = newtime;
+		delta /= 1000;
 
 		switch (GameState)
 		{

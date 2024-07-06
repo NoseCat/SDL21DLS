@@ -1,9 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-#include "SDLstuff.h"
-#include "Input.h"
-#include "string.h"
-#include "Structs.h"
+#include "..\\SDLstuff.h"
+#include "..\\Input.h"
+#include "..\\Structs.h"
+
 const int NAMEMAXSIZE = 50;
 const int delrad = 50;
 const int centerSize = 50;
@@ -76,41 +75,39 @@ bool drawline = false;
 
 bool del = false;
 
-int modeToEnemyType(int mode)
-{
-	switch (mode)
-	{
-	case LINES:
-		return EMPTY;
-
-	case KEYCARDREDm:
-		return KEYCARDRED;
-	case DOORRED:
-		return RED;
-	case KEYCARDGREENm:
-		return KEYCARDGREEN;
-	case DOORGREEN:
-		return GREEN;
-	case KEYCARDBLUEm:
-		return KEYCARDBLUE;
-	case DOORBLUE:
-		return BLUE;
-
-	case ENEMYTYPE1:
-		return RUNNER;
-	case ENEMYTYPE2:
-		return SHOOTER;
-	case ENEMYTYPE3:
-		return PORTAL;
-	}
-	return EMPTY;
-}
+//int modeToEnemyType(int mode)
+//{
+//	switch (mode)
+//	{
+//	case LINES:
+//		return EMPTY;
+//
+//	case KEYCARDREDm:
+//		return KEYCARDRED;
+//	case DOORRED:
+//		return RED;
+//	case KEYCARDGREENm:
+//		return KEYCARDGREEN;
+//	case DOORGREEN:
+//		return GREEN;
+//	case KEYCARDBLUEm:
+//		return KEYCARDBLUE;
+//	case DOORBLUE:
+//		return BLUE;
+//
+//	case ENEMYTYPE1:
+//		return RUNNER;
+//	case ENEMYTYPE2:
+//		return SHOOTER;
+//	case ENEMYTYPE3:
+//		return PORTAL;
+//	}
+//	return EMPTY;
+//}
 
 void eachFrame(float delta)
 {
-	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-
-	//printf("%i\n", linesSize);
+#pragma region Clear
 	for (int i = 0; i < doorsSize; i++)
 	{
 		if (doors[i].line.a.x == doors[i].line.b.x && doors[i].line.a.y == doors[i].line.b.y)
@@ -149,7 +146,9 @@ void eachFrame(float delta)
 			entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
 		}
 	}
+#pragma endregion //Clear
 
+	// Center/Player Spawn
 	SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
 	SDL_RenderDrawLineF(ren, (offset.x - centerSize) * scale, offset.y * scale, (offset.x + centerSize) * scale, offset.y * scale);
 	SDL_RenderDrawLineF(ren, offset.x * scale, (offset.y - centerSize) * scale, offset.x * scale, (offset.y + centerSize) * scale);
@@ -159,7 +158,7 @@ void eachFrame(float delta)
 		SDL_RenderDrawLineF(ren, (lines[i].a.x + offset.x) * scale, (lines[i].a.y + offset.y) * scale, (lines[i].b.x + offset.x) * scale, (lines[i].b.y + offset.y) * scale);
 	if (drawline)
 	{
-		switch (mode)
+	/*	switch (mode)
 		{
 		case DOORRED:
 			SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
@@ -170,7 +169,7 @@ void eachFrame(float delta)
 		case DOORBLUE:
 			SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
 			break;
-		}
+		}*/
 		SDL_RenderDrawLineF(ren, (linePoint1.x + offset.x) * scale, (linePoint1.y + offset.y) * scale, MousePos.x, MousePos.y);
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 	}
@@ -212,18 +211,18 @@ void eachFrame(float delta)
 	}
 	if (drawEnemy)
 	{
-		switch (mode)
-		{
-		case KEYCARDREDm:
-			SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
-			break;
-		case KEYCARDGREENm:
-			SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
-			break;
-		case KEYCARDBLUEm:
-			SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
-			break;
-		}
+		//switch (mode)
+		//{
+		//case KEYCARDREDm:
+		//	SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+		//	break;
+		//case KEYCARDGREENm:
+		//	SDL_SetRenderDrawColor(ren, 0, 255, 0, 255);
+		//	break;
+		//case KEYCARDBLUEm:
+		//	SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
+		//	break;
+		//}
 		tempPos = MousePos;
 		ZHIR_drawCircleF(tempPos, tempRad);
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
@@ -239,16 +238,16 @@ void eachFrame(float delta)
 	//	scale = ZHIR_vecSumF(scale, { -0.01, -0.01 });
 	//}
 
-	if (input_MOUSEMIDDLECLICK)
+	if (input_MMB)
 	{
 		offset.x += MousePosRel.x * 1 / scale;
 		offset.y += MousePosRel.y * 1 / scale;
 	}
 	SDL_FPoint offsetMousePos = ZHIR_vecMultF(ZHIR_vecSubF(MousePos, ZHIR_vecMultF(offset, scale)), 1 / scale);
 
-	if (input_MOUSERIGHTCLICK && !del)
+	if (input_RMB && !del)
 		del = true;
-	if (!input_MOUSERIGHTCLICK && del)
+	if (!input_RMB && del)
 	{
 		del = false;
 		ZHIR_drawCircleF(MousePos, delrad);
@@ -286,15 +285,15 @@ void eachFrame(float delta)
 
 	}
 
-	switch (mode)
-	{
-	case LINES:
-		if (input_MOUSELEFTCLICK && !drawline)
+	//switch (mode)
+	//{
+	//case LINES:
+		if (input_LMB && !drawline)
 		{
 			linePoint1 = offsetMousePos;
 			drawline = true;
 		}
-		if (!input_MOUSELEFTCLICK && drawline)
+		if (!input_LMB && drawline)
 		{
 			linePoint2 = offsetMousePos;
 			drawline = false;
@@ -303,177 +302,177 @@ void eachFrame(float delta)
 			lines = (ZHIR_LineF*)realloc(lines, sizeof(ZHIR_LineF) * linesSize);
 			lines[linesSize - 1] = { linePoint1, linePoint2 };
 		}
-		break;
-	case DOORRED:
-	case DOORGREEN:
-	case DOORBLUE:
-		if (input_MOUSELEFTCLICK && !drawline)
-		{
-			linePoint1 = offsetMousePos;
-			drawline = true;
-		}
-		if (!input_MOUSELEFTCLICK && drawline)
-		{
-			linePoint2 = offsetMousePos;
-			drawline = false;
+	//	break;
+	//case DOORRED:
+	//case DOORGREEN:
+	//case DOORBLUE:
+	//	if (input_LMB && !drawline)
+	//	{
+	//		linePoint1 = offsetMousePos;
+	//		drawline = true;
+	//	}
+	//	if (!input_LMB && drawline)
+	//	{
+	//		linePoint2 = offsetMousePos;
+	//		drawline = false;
 
-			doorsSize++;
-			doors = (Door*)realloc(doors, sizeof(Door) * doorsSize);
-			doors[doorsSize - 1].line = { linePoint1, linePoint2 };
-			doors[doorsSize - 1].id = modeToEnemyType(mode);
-			doors[doorsSize - 1].open = false;
-		}
-		break;
-	case KEYCARDREDm:
-	case KEYCARDGREENm:
-	case KEYCARDBLUEm:
-		if (input_MOUSELEFTCLICK && !drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = true;
-		}
-		if (!input_MOUSELEFTCLICK && drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = false;
+	//		doorsSize++;
+	//		doors = (Door*)realloc(doors, sizeof(Door) * doorsSize);
+	//		doors[doorsSize - 1].line = { linePoint1, linePoint2 };
+	//		doors[doorsSize - 1].id = modeToEnemyType(mode);
+	//		doors[doorsSize - 1].open = false;
+	//	}
+	//	break;
+	//case KEYCARDREDm:
+	//case KEYCARDGREENm:
+	//case KEYCARDBLUEm:
+	//	if (input_LMB && !drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = true;
+	//	}
+	//	if (!input_LMB && drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = false;
 
-			enemiesSize++;
-			entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
-			//only neccesery stats
-			entities[enemiesSize - 1].type = modeToEnemyType(mode);
-			entities[enemiesSize - 1].position = tempPos;
-			//class stats
-			entities[enemiesSize - 1].radius = 50;
-			entities[enemiesSize - 1].vertSize = 100;
-			//junk
-			entities[enemiesSize - 1].health = 100;
-			entities[enemiesSize - 1].accel = 4000;
-			entities[enemiesSize - 1].speedLimit = 5000;
-			entities[enemiesSize - 1].friction = 2000;
-			entities[enemiesSize - 1].actionDelay.active = false;
-			entities[enemiesSize - 1].actionDelay.time = 3;
-			entities[enemiesSize - 1].speed = 300;
-			entities[enemiesSize - 1].accelVec = { 0,0 };
-			entities[enemiesSize - 1].dir = { 0,0 };
-			entities[enemiesSize - 1].speedVec = { 0,0 };
-			entities[enemiesSize - 1].active = false;
-			entities[enemiesSize - 1].anim = { false, 0 };
-			entities[enemiesSize - 1].animFrame = 0;
-			entities[enemiesSize - 1].fullAnimCycle = 1;
+	//		enemiesSize++;
+	//		entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
+	//		//only neccesery stats
+	//		entities[enemiesSize - 1].type = modeToEnemyType(mode);
+	//		entities[enemiesSize - 1].position = tempPos;
+	//		//class stats
+	//		entities[enemiesSize - 1].radius = 50;
+	//		entities[enemiesSize - 1].vertSize = 100;
+	//		//junk
+	//		entities[enemiesSize - 1].health = 100;
+	//		entities[enemiesSize - 1].accel = 4000;
+	//		entities[enemiesSize - 1].speedLimit = 5000;
+	//		entities[enemiesSize - 1].friction = 2000;
+	//		entities[enemiesSize - 1].actionDelay.active = false;
+	//		entities[enemiesSize - 1].actionDelay.time = 3;
+	//		entities[enemiesSize - 1].speed = 300;
+	//		entities[enemiesSize - 1].accelVec = { 0,0 };
+	//		entities[enemiesSize - 1].dir = { 0,0 };
+	//		entities[enemiesSize - 1].speedVec = { 0,0 };
+	//		entities[enemiesSize - 1].active = false;
+	//		entities[enemiesSize - 1].anim = { false, 0 };
+	//		entities[enemiesSize - 1].animFrame = 0;
+	//		entities[enemiesSize - 1].fullAnimCycle = 1;
 
-		}
-		break;
-	case ENEMYTYPE1: //RUNNER
-		if (input_MOUSELEFTCLICK && !drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = true;
-		}
-		if (!input_MOUSELEFTCLICK && drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = false;
+	//	}
+	//	break;
+	//case ENEMYTYPE1: //RUNNER
+	//	if (input_LMB && !drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = true;
+	//	}
+	//	if (!input_LMB && drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = false;
 
-			enemiesSize++;
-			entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
-			//only neccesery stats
-			entities[enemiesSize - 1].type = modeToEnemyType(mode);
-			entities[enemiesSize - 1].position = tempPos;
-			//class stats
-			entities[enemiesSize - 1].radius = 200;
-			entities[enemiesSize - 1].health = 100;
-			entities[enemiesSize - 1].accel = 4000;
-			entities[enemiesSize - 1].speedLimit = 5000;
-			entities[enemiesSize - 1].friction = 2000;
-			entities[enemiesSize - 1].vertSize = 400;
-			entities[enemiesSize - 1].fullAnimCycle = 5;
-			entities[enemiesSize - 1].anim = { false, 5};
-			entities[enemiesSize - 1].animFrame = 0;
-			//junk
-			entities[enemiesSize - 1].actionDelay.active = false;
-			entities[enemiesSize - 1].actionDelay.time = 3;
-			entities[enemiesSize - 1].speed = 300;
-			entities[enemiesSize - 1].accelVec = { 0,0 };
-			entities[enemiesSize - 1].dir = { 0,0 };
-			entities[enemiesSize - 1].speedVec = { 0,0 };
-			entities[enemiesSize - 1].active = false;
-		}
-		break;
-	case ENEMYTYPE2: //SHOOTER
-		if (input_MOUSELEFTCLICK && !drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = true;
-		}
-		if (!input_MOUSELEFTCLICK && drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = false;
+	//		enemiesSize++;
+	//		entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
+	//		//only neccesery stats
+	//		entities[enemiesSize - 1].type = modeToEnemyType(mode);
+	//		entities[enemiesSize - 1].position = tempPos;
+	//		//class stats
+	//		entities[enemiesSize - 1].radius = 200;
+	//		entities[enemiesSize - 1].health = 100;
+	//		entities[enemiesSize - 1].accel = 4000;
+	//		entities[enemiesSize - 1].speedLimit = 5000;
+	//		entities[enemiesSize - 1].friction = 2000;
+	//		entities[enemiesSize - 1].vertSize = 400;
+	//		entities[enemiesSize - 1].fullAnimCycle = 5;
+	//		entities[enemiesSize - 1].anim = { false, 5};
+	//		entities[enemiesSize - 1].animFrame = 0;
+	//		//junk
+	//		entities[enemiesSize - 1].actionDelay.active = false;
+	//		entities[enemiesSize - 1].actionDelay.time = 3;
+	//		entities[enemiesSize - 1].speed = 300;
+	//		entities[enemiesSize - 1].accelVec = { 0,0 };
+	//		entities[enemiesSize - 1].dir = { 0,0 };
+	//		entities[enemiesSize - 1].speedVec = { 0,0 };
+	//		entities[enemiesSize - 1].active = false;
+	//	}
+	//	break;
+	//case ENEMYTYPE2: //SHOOTER
+	//	if (input_LMB && !drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = true;
+	//	}
+	//	if (!input_LMB && drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = false;
 
-			enemiesSize++;
-			entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
-			//only neccesery stats
-			entities[enemiesSize - 1].type = modeToEnemyType(mode);
-			entities[enemiesSize - 1].position = tempPos;
-			//class stats
-			entities[enemiesSize - 1].radius = 100;
-			entities[enemiesSize - 1].health = 50;
-			entities[enemiesSize - 1].accel = 10000;
-			entities[enemiesSize - 1].speedLimit = 1000;
-			entities[enemiesSize - 1].friction = 6000;
-			entities[enemiesSize - 1].vertSize = 200;
-			entities[enemiesSize - 1].actionDelay.active = false;
-			entities[enemiesSize - 1].actionDelay.time = 3;
-			entities[enemiesSize - 1].fullAnimCycle = 5;
-			entities[enemiesSize - 1].anim = { false, 5 };
-			entities[enemiesSize - 1].animFrame = 0;
-			//junk
-			entities[enemiesSize - 1].speed = 300;
-			entities[enemiesSize - 1].accelVec = { 0,0 };
-			entities[enemiesSize - 1].dir = { 0,0 };
-			entities[enemiesSize - 1].speedVec = { 0,0 };
-			entities[enemiesSize - 1].active = false;
-			/*entities[enemiesSize - 1].face1 =;
-			entities[enemiesSize - 1].face2 =;*/
-		}
-		break;
-	case ENEMYTYPE3:
-		if (input_MOUSELEFTCLICK && !drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = true;
-		}
-		if (!input_MOUSELEFTCLICK && drawEnemy)
-		{
-			tempPos = offsetMousePos;
-			drawEnemy = false;
+	//		enemiesSize++;
+	//		entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
+	//		//only neccesery stats
+	//		entities[enemiesSize - 1].type = modeToEnemyType(mode);
+	//		entities[enemiesSize - 1].position = tempPos;
+	//		//class stats
+	//		entities[enemiesSize - 1].radius = 100;
+	//		entities[enemiesSize - 1].health = 50;
+	//		entities[enemiesSize - 1].accel = 10000;
+	//		entities[enemiesSize - 1].speedLimit = 1000;
+	//		entities[enemiesSize - 1].friction = 6000;
+	//		entities[enemiesSize - 1].vertSize = 200;
+	//		entities[enemiesSize - 1].actionDelay.active = false;
+	//		entities[enemiesSize - 1].actionDelay.time = 3;
+	//		entities[enemiesSize - 1].fullAnimCycle = 5;
+	//		entities[enemiesSize - 1].anim = { false, 5 };
+	//		entities[enemiesSize - 1].animFrame = 0;
+	//		//junk
+	//		entities[enemiesSize - 1].speed = 300;
+	//		entities[enemiesSize - 1].accelVec = { 0,0 };
+	//		entities[enemiesSize - 1].dir = { 0,0 };
+	//		entities[enemiesSize - 1].speedVec = { 0,0 };
+	//		entities[enemiesSize - 1].active = false;
+	//		/*entities[enemiesSize - 1].face1 =;
+	//		entities[enemiesSize - 1].face2 =;*/
+	//	}
+	//	break;
+	//case ENEMYTYPE3:
+	//	if (input_LMB && !drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = true;
+	//	}
+	//	if (!input_LMB && drawEnemy)
+	//	{
+	//		tempPos = offsetMousePos;
+	//		drawEnemy = false;
 
-			enemiesSize++;
-			entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
-			//only neccesery stats
-			entities[enemiesSize - 1].type = modeToEnemyType(mode);
-			entities[enemiesSize - 1].position = tempPos;
-			//class stats
-			entities[enemiesSize - 1].radius = 250;
-			entities[enemiesSize - 1].health = 200;
-			entities[enemiesSize - 1].accel = 0;
-			entities[enemiesSize - 1].speedLimit = 0;
-			entities[enemiesSize - 1].friction = 0;
-			entities[enemiesSize - 1].vertSize = 500;
-			entities[enemiesSize - 1].actionDelay.active = false;
-			entities[enemiesSize - 1].actionDelay.time = 6;
-			entities[enemiesSize - 1].fullAnimCycle = 2;
-			entities[enemiesSize - 1].anim = { false, 5 };
-			entities[enemiesSize - 1].animFrame = 0;
-			//junk
-			entities[enemiesSize - 1].speed = 300;
-			entities[enemiesSize - 1].accelVec = { 0,0 };
-			entities[enemiesSize - 1].dir = { 0,0 };
-			entities[enemiesSize - 1].speedVec = { 0,0 };
-			entities[enemiesSize - 1].active = false;
-		}
-		break;
-	}
+	//		enemiesSize++;
+	//		entities = (Entity*)realloc(entities, sizeof(Entity) * enemiesSize);
+	//		//only neccesery stats
+	//		entities[enemiesSize - 1].type = modeToEnemyType(mode);
+	//		entities[enemiesSize - 1].position = tempPos;
+	//		//class stats
+	//		entities[enemiesSize - 1].radius = 250;
+	//		entities[enemiesSize - 1].health = 200;
+	//		entities[enemiesSize - 1].accel = 0;
+	//		entities[enemiesSize - 1].speedLimit = 0;
+	//		entities[enemiesSize - 1].friction = 0;
+	//		entities[enemiesSize - 1].vertSize = 500;
+	//		entities[enemiesSize - 1].actionDelay.active = false;
+	//		entities[enemiesSize - 1].actionDelay.time = 6;
+	//		entities[enemiesSize - 1].fullAnimCycle = 2;
+	//		entities[enemiesSize - 1].anim = { false, 5 };
+	//		entities[enemiesSize - 1].animFrame = 0;
+	//		//junk
+	//		entities[enemiesSize - 1].speed = 300;
+	//		entities[enemiesSize - 1].accelVec = { 0,0 };
+	//		entities[enemiesSize - 1].dir = { 0,0 };
+	//		entities[enemiesSize - 1].speedVec = { 0,0 };
+	//		entities[enemiesSize - 1].active = false;
+	//	}
+	//	break;
+	//}
 }
 
 void onEnd()

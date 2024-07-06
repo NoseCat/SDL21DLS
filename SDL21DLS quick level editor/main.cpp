@@ -1,7 +1,4 @@
-﻿#include <iostream>
-#include "SDLstuff.h"
-#include "mainblock.h"
-#include "Input.h"
+﻿#include "mainblock.h"
 
 int main(int argc, char* argv[])
 {
@@ -42,101 +39,102 @@ int main(int argc, char* argv[])
 				MousePosRel.y = ev.motion.yrel;
 				break;
 
-			case SDL_MOUSEWHEEL:
-				if (ev.wheel.direction > 0)
-				{
-					input_MOUSEWHEELUP = true;
-					input_MOUSEWHEELDOWN = false;
-				}
-				if (ev.wheel.direction < 0)
-				{
-					input_MOUSEWHEELUP = false;
-					input_MOUSEWHEELDOWN = true;
-				}
-				if (ev.wheel.direction == 0)
-				{
-					input_MOUSEWHEELUP = false;
-					input_MOUSEWHEELDOWN = false;
-				}
-				break;
+				/*	case SDL_MOUSEWHEEL:
+						if (ev.wheel.direction > 0)
+						{
+							input_MOUSEWHEELUP = true;
+							input_MOUSEWHEELDOWN = false;
+						}
+						if (ev.wheel.direction < 0)
+						{
+							input_MOUSEWHEELUP = false;
+							input_MOUSEWHEELDOWN = true;
+						}
+						if (ev.wheel.direction == 0)
+						{
+							input_MOUSEWHEELUP = false;
+							input_MOUSEWHEELDOWN = false;
+						}
+						break;*/
 
 			case SDL_MOUSEBUTTONDOWN:
 				if (ev.button.button == SDL_BUTTON_RIGHT)
-					input_MOUSERIGHTCLICK = true;
+					input_RMB = true;
 				if (ev.button.button == SDL_BUTTON_LEFT)
-					input_MOUSELEFTCLICK = true;
+					input_LMB = true;
 				if (ev.button.button == SDL_BUTTON_MIDDLE)
-					input_MOUSEMIDDLECLICK = true;
+					input_MMB = true;
 				break;
 
 			case SDL_MOUSEBUTTONUP:
 				if (ev.button.button == SDL_BUTTON_RIGHT)
-					input_MOUSERIGHTCLICK = false;
+					input_RMB = false;
 				if (ev.button.button == SDL_BUTTON_LEFT)
-					input_MOUSELEFTCLICK = false;
+					input_LMB = false;
 				if (ev.button.button == SDL_BUTTON_MIDDLE)
-					input_MOUSEMIDDLECLICK = false;
+					input_MMB = false;
 				break;
 
 			case SDL_KEYDOWN:
 				switch (ev.key.keysym.scancode)
 				{
 
-				case SDL_SCANCODE_W:
-					break;
+					//case SDL_SCANCODE_W:
+					//	break;
 
-				case SDL_SCANCODE_1:
-					mode = LINES;
-					break;
+					//case SDL_SCANCODE_1:
+					//	mode = LINES;
+					//	break;
 
-				case SDL_SCANCODE_2:
-					mode = ENEMYTYPE1;
-					break;
+					//case SDL_SCANCODE_2:
+					//	mode = ENEMYTYPE1;
+					//	break;
 
-				case SDL_SCANCODE_3:
-					mode = ENEMYTYPE2;
-					break;
+					//case SDL_SCANCODE_3:
+					//	mode = ENEMYTYPE2;
+					//	break;
 
-				case SDL_SCANCODE_4:
-					mode = ENEMYTYPE3;
-					break;
+					//case SDL_SCANCODE_4:
+					//	mode = ENEMYTYPE3;
+					//	break;
 
-				case SDL_SCANCODE_5:
-					mode = DOORRED;
-					break;
+					//case SDL_SCANCODE_5:
+					//	mode = DOORRED;
+					//	break;
 
-				case SDL_SCANCODE_6:
-					mode = DOORGREEN;
-					break;
+					//case SDL_SCANCODE_6:
+					//	mode = DOORGREEN;
+					//	break;
 
-				case SDL_SCANCODE_7:
-					mode = DOORBLUE;
-					break;
+					//case SDL_SCANCODE_7:
+					//	mode = DOORBLUE;
+					//	break;
 
-				case SDL_SCANCODE_8:
-					mode = KEYCARDREDm;
-					break;
+					//case SDL_SCANCODE_8:
+					//	mode = KEYCARDREDm;
+					//	break;
 
-				case SDL_SCANCODE_9:
-					mode = KEYCARDGREENm;
-					break;
+					//case SDL_SCANCODE_9:
+					//	mode = KEYCARDGREENm;
+					//	break;
 
-				case SDL_SCANCODE_0:
-					mode = KEYCARDBLUEm;
+					//case SDL_SCANCODE_0:
+					//	mode = KEYCARDBLUEm;
+					//	break;
+					//}
+					//break;
+
+				case SDL_KEYUP:
+					switch (ev.key.keysym.scancode)
+					{
+
+					case SDL_SCANCODE_W:
+
+						break;
+
+					}
 					break;
 				}
-				break;
-
-			case SDL_KEYUP:
-				switch (ev.key.keysym.scancode)
-				{
-
-				case SDL_SCANCODE_W:
-
-					break;
-
-				}
-				break;
 			}
 		}
 
