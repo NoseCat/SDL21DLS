@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClCompile Include="..\Input.cpp" />
     <ClCompile Include="..\SDLstuff.cpp" />
+    <ClCompile Include="..\UI.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SDL21DLS quick level editor.cpp" />
   </ItemGroup>

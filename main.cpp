@@ -1,5 +1,4 @@
-﻿#include <iostream>
-#include "SDLstuff.h"
+﻿#include "SDLstuff.h"
 #include "mainblock.h"
 #include "Input.h"
 
@@ -12,10 +11,10 @@ int main(int argc, char* argv[])
 	float newtime = 0, lasttime = 0, delta = 1.0f / 1000;
 	bool RUN = true;
 	SDL_Event ev;
-	GameState = MENU;
+	//GameState = MENU;
 
 	globalOnStart();
-	//onStart();
+	onLevelStart("gamelevels\\level1.bin");
 
 	while (RUN)
 	{
@@ -109,9 +108,11 @@ int main(int argc, char* argv[])
 			delta = newtime - lasttime;
 		}
 		lasttime = newtime;
-		delta /= 1000;
+		delta /= 1000.0f;
 
-		switch (GameState)
+		eachFrame(delta);
+
+		/*switch (GameState)
 		{
 		case MENU:
 			mainMenuEachFrame();
@@ -138,7 +139,7 @@ int main(int argc, char* argv[])
 			break;
 		default:
 			printf("gameState error\n");
-		}
+		}*/
 
 		SDL_RenderPresent(ren);
 		SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);

@@ -5,14 +5,15 @@
 #include "Input.h"
 #include "EnemyBehavior.h"
 #include "mainblock.h"
+#include "UI.h"
+
 int GameState;
 
 Player player;
 
 //settings
 float mouseSensetivity = 15.0f;
-//float mouseSensetivity = 15.0f;
-float rayPrecision = 0.1f;
+float rayPrecision = 0.05f;
 float wallSize = 500.0f; //affects visual vertical wall size
 float viewDistance = 20000.0f;
 float aerialFactor = 1.5f; //keep around 1~2. affects how far you need to be for lines to start getting thinner
@@ -40,22 +41,6 @@ Door* doors = nullptr;
 int doorsSize = 0;
 
 //float max = 3e38f;
-
-//SDL_FPoint pf1;
-//SDL_FPoint pf2;
-//SDL_FPoint pf3;
-//
-//ZHIR_LineF line1;
-//ZHIR_LineF line2;
-//ZHIR_LineF line3;
-//ZHIR_LineF line4;
-//ZHIR_LineF line5;
-//ZHIR_LineF line6;
-//ZHIR_LineF line7;
-
-//ZHIR_LineF* smkLines;
-//int smkLinesSize = 1;
-//int smkBounces = 5;
 
 Sprite sprite1;
 Sprite Shoot;
@@ -427,7 +412,8 @@ void eachFrame(float delta)
 
 	enemyPreRender(entities, totalEntities);
 
-	lineRender(lines, doors, linesSize, doorsSize);
+	//lineRender(lines, doors, linesSize, doorsSize);
+	lineRender(lines, linesSize);
 
 	//smokeRender(smkLines, smkLinesSize, lines, linesSize);
 

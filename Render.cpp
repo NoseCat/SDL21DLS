@@ -1,31 +1,25 @@
 #include "Render.h"
 
-void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSize, int doorsArrSize)
+void lineRender(const ZHIR_LineF* linesArr, int linesArrSize)
 {
-	//initializtion
-	int linesSize = linesArrSize;
-	linesArrSize += doorsArrSize;
-
 	SDL_FPoint unitVec = ZHIR_vecSumF(player.position, { 1,0 });
-	int numPoints = ((int)(player.FOV / rayPrecision) + 1);
-	SDL_FPoint* linePoints = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * numPoints);
-	int* lineIntersections = (int*)malloc(sizeof(int) * numPoints);
-	int* lineIntersectionsID = (int*)malloc(sizeof(int) * numPoints);
-	for (int i = 0; i < numPoints; i++)
-	{
-		linePoints[i] = { -1, -1 };
-		lineIntersections[i] = -1;
-		lineIntersectionsID[i] = -1;
-	}
+	SDL_FPoint prevLine = { -1, 0 };
+	SDL_FPoint curLine = { -1, 0 };
+	bool intersection = false;
+	int curLineId = -1;
+	int prevLineId = -1;
 
-	//compute cycle
-	numPoints = 0;
 	for (float angle = player.lFOV; angle <= player.hFOV; angle += rayPrecision)
 	{
+		intersection = false;
+		prevLine = curLine;
+		curLine = { -1, 0 };
+		prevLineId = curLineId;
+
+		//raycast to find wall
 		SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, player.position, angle), player.position)), viewDistance);
 		ray = ZHIR_vecSumF(ray, player.position);
 		float minDistance = viewDistance;
-		//SDL_RenderDrawLineF(ren, player.position.x, playerPosition.y, ray.x, ray.y);
 		for (int i = 0; i < linesArrSize; i++)
 		{
 			float distance = 0;
@@ -34,123 +28,207 @@ void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSi
 				distance = ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, linesArr[i]), player.position));
 				if (distance < minDistance)
 				{
+					curLineId = i;
 					minDistance = distance;
-					float size = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * wallSize / minDistance;
-					float x = WIN_WIDTH * (angle - player.lFOV) / player.FOV;
-					linePoints[numPoints] = { x,  size };
-					lineIntersections[numPoints] = i;
-
-					if (i >= linesSize)
-						lineIntersectionsID[numPoints] = doorsArr[i - linesSize].id;
-					else
-						lineIntersectionsID[numPoints] = -1;
+					curLine.y = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * wallSize / minDistance;
+					curLine.x = WIN_WIDTH * (angle - player.lFOV) / player.FOV;
 				}
 			}
 		}
-		numPoints++;
-	}
-
-	//render cycle
-	for (int i = 0; i < numPoints - 1; i++)
-	{
-		switch (lineIntersectionsID[i])
-		{
-		default:
-			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-			break;
-		case RED:
-			SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-			break;
-		case GREEN:
-			SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-			break;
-		case BLUE:
-			SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-			break;
-		}
-		/*SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);*/
-		bool intersection = false;
-		if (lineIntersections[i] != lineIntersections[i + 1])
-		{
+		if (curLineId != prevLineId)
 			intersection = true;
+
+		//render
+		//no wall
+		if (prevLine.x == -1 && curLine.x == -1)
+			continue;
+
+		//wall start (right border)
+		if (prevLine.x == -1 && curLine.x != -1)
+		{
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(curLine.y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			SDL_RenderDrawLineF(ren, curLine.x, curLine.y, curLine.x, WIN_HEIGHT - curLine.y);
+			continue;
 		}
 
-		if (!intersection)
+		//wall, no intersections
+		if (prevLine.x != -1 && curLine.x != -1 && !intersection)
 		{
-			//printf("%i ", linePoints[i].x);
-			SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i + 1].y);
-			SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
-
-			//wall coloring experiment
-			//float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
-			//SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-			//SDL_RenderDrawLineF(ren, linePoints[i + 1].x, y, linePoints[i + 1].x, WIN_HEIGHT - y);
-			//SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(curLine.y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			SDL_RenderDrawLineF(ren, prevLine.x, prevLine.y, curLine.x, curLine.y);
+			SDL_RenderDrawLineF(ren, prevLine.x, WIN_HEIGHT - prevLine.y, curLine.x, WIN_HEIGHT - curLine.y);
+			continue;
 		}
-		else
-		{
-			intersection = false;
-			if (linePoints[i].x >= 0 && linePoints[i + 1].x >= 0) //intersection
-			{
-				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i].y);
-				SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i].y);
 
-				//float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
-				float y = linePoints[i].y;
-				int j = i;
-				if (linePoints[i + 1].y <= linePoints[i].y)
-				{
-					j = i + 1;
-					y = linePoints[i + 1].y;
-				}
-				switch (lineIntersectionsID[j])
-				{
-				default:
-					SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				case RED:
-					SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				case GREEN:
-					SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				case BLUE:
-					SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				}
-				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, y, linePoints[i + 1].x, WIN_HEIGHT - y);
-			}
-			else if (linePoints[i + 1].x >= 0) //most left border
-			{
-				//SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-				switch (lineIntersectionsID[i + 1])
-				{
-				default:
-					SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				case RED:
-					SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				case GREEN:
-					SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				case BLUE:
-					SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
-					break;
-				}
-				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, linePoints[i + 1].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
-			}
-			else //most right border
-			{
-				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i].x, WIN_HEIGHT - linePoints[i].y);
-			}
+		//wall, intersection
+		if (prevLine.x != -1 && curLine.x != -1 && intersection)
+		{
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(SDL_min(prevLine.y, curLine.y) / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			SDL_RenderDrawLineF(ren, curLine.x, SDL_min(prevLine.y, curLine.y), curLine.x, WIN_HEIGHT - SDL_min(prevLine.y, curLine.y));
+			continue;
+		}
+
+		//wall end (left border)
+		if (prevLine.x != -1 && curLine.x == -1)
+		{
+			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(prevLine.y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+			SDL_RenderDrawLineF(ren, prevLine.x, prevLine.y, prevLine.x, WIN_HEIGHT - prevLine.y);
+			continue;
 		}
 	}
-
-	free(linePoints);
-	free(lineIntersections);
-	free(lineIntersectionsID);
 }
+
+//void lineRender(const ZHIR_LineF* linesArr, const Door* doorsArr, int linesArrSize, int doorsArrSize)
+//{
+//	//initializtion
+//	int linesSize = linesArrSize;
+//	linesArrSize += doorsArrSize;
+//
+//	SDL_FPoint unitVec = ZHIR_vecSumF(player.position, { 1,0 });
+//	int numPoints = ((int)(player.FOV / rayPrecision) + 1);
+//	SDL_FPoint* linePoints = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * numPoints);
+//	int* lineIntersections = (int*)malloc(sizeof(int) * numPoints);
+//	int* lineIntersectionsID = (int*)malloc(sizeof(int) * numPoints);
+//	for (int i = 0; i < numPoints; i++)
+//	{
+//		linePoints[i] = { -1, -1 };
+//		lineIntersections[i] = -1;
+//		lineIntersectionsID[i] = -1;
+//	}
+//
+//	//compute cycle
+//	numPoints = 0;
+//	for (float angle = player.lFOV; angle <= player.hFOV; angle += rayPrecision)
+//	{
+//		SDL_FPoint ray = ZHIR_vecMultF(ZHIR_vecNormal(ZHIR_vecSubF(ZHIR_rotateOnDegreeF(unitVec, player.position, angle), player.position)), viewDistance);
+//		ray = ZHIR_vecSumF(ray, player.position);
+//		float minDistance = viewDistance;
+//		//SDL_RenderDrawLineF(ren, player.position.x, playerPosition.y, ray.x, ray.y);
+//		for (int i = 0; i < linesArrSize; i++)
+//		{
+//			float distance = 0;
+//			if (ZHIR_isIntersectF({ player.position, ray }, linesArr[i]))
+//			{
+//				distance = ZHIR_vecLengthF(ZHIR_vecSubF(ZHIR_findIntersectF({ player.position, ray }, linesArr[i]), player.position));
+//				if (distance < minDistance)
+//				{
+//					minDistance = distance;
+//					float size = WIN_HEIGHT / 2 - WIN_HEIGHT / 2 * wallSize / minDistance;
+//					float x = WIN_WIDTH * (angle - player.lFOV) / player.FOV;
+//					linePoints[numPoints] = { x,  size };
+//					lineIntersections[numPoints] = i;
+//
+//					if (i >= linesSize)
+//						lineIntersectionsID[numPoints] = doorsArr[i - linesSize].id;
+//					else
+//						lineIntersectionsID[numPoints] = -1;
+//				}
+//			}
+//		}
+//		numPoints++;
+//	}
+//
+//	//render cycle
+//	for (int i = 0; i < numPoints - 1; i++)
+//	{
+//		switch (lineIntersectionsID[i])
+//		{
+//		default:
+//			SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//			break;
+//		case RED:
+//			SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//			break;
+//		case GREEN:
+//			SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//			break;
+//		case BLUE:
+//			SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//			break;
+//		}
+//		/*SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);*/
+//		bool intersection = false;
+//		if (lineIntersections[i] != lineIntersections[i + 1])
+//		{
+//			intersection = true;
+//		}
+//
+//		if (!intersection)
+//		{
+//			//printf("%i ", linePoints[i].x);
+//			SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i + 1].y);
+//			SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
+//
+//			//wall coloring experiment
+//			//float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
+//			//SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//			//SDL_RenderDrawLineF(ren, linePoints[i + 1].x, y, linePoints[i + 1].x, WIN_HEIGHT - y);
+//			//SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+//		}
+//		else
+//		{
+//			intersection = false;
+//			if (linePoints[i].x >= 0 && linePoints[i + 1].x >= 0) //intersection
+//			{
+//				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i + 1].x, linePoints[i].y);
+//				SDL_RenderDrawLineF(ren, linePoints[i].x, WIN_HEIGHT - linePoints[i].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i].y);
+//
+//				//float y = SDL_min(linePoints[i + 1].y, linePoints[i].y);
+//				float y = linePoints[i].y;
+//				int j = i;
+//				if (linePoints[i + 1].y <= linePoints[i].y)
+//				{
+//					j = i + 1;
+//					y = linePoints[i + 1].y;
+//				}
+//				switch (lineIntersectionsID[j])
+//				{
+//				default:
+//					SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				case RED:
+//					SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				case GREEN:
+//					SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				case BLUE:
+//					SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[j].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				}
+//				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, y, linePoints[i + 1].x, WIN_HEIGHT - y);
+//			}
+//			else if (linePoints[i + 1].x >= 0) //most left border
+//			{
+//				//SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//				switch (lineIntersectionsID[i + 1])
+//				{
+//				default:
+//					SDL_SetRenderDrawColor(ren, 0, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				case RED:
+//					SDL_SetRenderDrawColor(ren, 255, 0, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				case GREEN:
+//					SDL_SetRenderDrawColor(ren, 0, 255, 0, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				case BLUE:
+//					SDL_SetRenderDrawColor(ren, 0, 0, 255, ZHIR_slapF(-255.0f * aerialFactor * (ZHIR_slapF(linePoints[i + 1].y / (WIN_HEIGHT / 2), 0, 1) - 1), aerialLowerBorder, 255));
+//					break;
+//				}
+//				SDL_RenderDrawLineF(ren, linePoints[i + 1].x, linePoints[i + 1].y, linePoints[i + 1].x, WIN_HEIGHT - linePoints[i + 1].y);
+//			}
+//			else //most right border
+//			{
+//				SDL_RenderDrawLineF(ren, linePoints[i].x, linePoints[i].y, linePoints[i].x, WIN_HEIGHT - linePoints[i].y);
+//			}
+//		}
+//	}
+//
+//	free(linePoints);
+//	free(lineIntersections);
+//	free(lineIntersectionsID);
+//}
 
 void renderImage(const Sprite* sprite, int frame, const SDL_FRect& fullRect, const SDL_FRect& cutRect)
 {
