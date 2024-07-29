@@ -69,31 +69,7 @@ const float shotDelay = 1;
 const float handAnimTime = shotDelay * 4 / 5;
 Timer handAnim = { false, handAnimTime };
 
-SDL_Rect startButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-SDL_Rect exitButton = { WIN_WIDTH / 2 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-Button startB = { startButton , false, nullptr };
-Button exitB = { exitButton , false , nullptr };
-Button againB = { startButton , false, nullptr };
 
-SDL_Rect authorButton = { WIN_WIDTH - WIN_WIDTH / 12 - WIN_WIDTH / 8, WIN_HEIGHT - WIN_HEIGHT / 12 - WIN_HEIGHT / 16, WIN_WIDTH / 8 ,WIN_HEIGHT / 16 };
-SDL_Rect level1Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-SDL_Rect level2Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-SDL_Rect level3Button = { WIN_WIDTH / 4 - WIN_WIDTH / 6 + level1Button.x + level1Button.w, -WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-SDL_Rect customButton = { WIN_WIDTH / 4 - WIN_WIDTH / 6 + level1Button.x + level1Button.w, WIN_HEIGHT / 8 + WIN_HEIGHT / 2 - WIN_HEIGHT / 12, WIN_WIDTH / 3, WIN_HEIGHT / 6 };
-Button authorB = { authorButton , false, nullptr };
-Button level1B = { level1Button , false, nullptr };
-Button level2B = { level2Button , false , nullptr };
-Button level3B = { level3Button , false, nullptr };
-Button customB = { customButton , false , nullptr };
-Button timeLabel = { {0,0, WIN_WIDTH, WIN_HEIGHT / 6}, false, nullptr };
-Button recordLabel = { {0, WIN_HEIGHT - WIN_HEIGHT / 6, WIN_WIDTH, WIN_HEIGHT / 6}, false, nullptr };
-
-void texturefromtext(Button& button, const char* text, TTF_Font* my_font, SDL_Color fore_color, SDL_Color back_color)
-{
-	SDL_Surface* textSurface = TTF_RenderText_Shaded(my_font, text, fore_color, back_color);
-	button.textTexture = SDL_CreateTextureFromSurface(ren, textSurface);
-	SDL_FreeSurface(textSurface);
-}
 
 void spritefromimage(Sprite& sprite, const char* sprtname, int frames)
 {
@@ -119,15 +95,15 @@ void globalOnStart()
 	SDL_Color fore_color = { 130,140,50 };
 	SDL_Color back_color = { 188,155,166 };
 
-	texturefromtext(startB, "play\0", my_font, fore_color, back_color);
-	texturefromtext(exitB, "exit\0", my_font, fore_color, back_color);
-	texturefromtext(againB, "again\0", my_font, fore_color, back_color);
-	texturefromtext(authorB, "author\0", my_font, fore_color, back_color);
+	//texturefromtext(startB, "play\0", my_font, fore_color, back_color);
+	//texturefromtext(exitB, "exit\0", my_font, fore_color, back_color);
+	//texturefromtext(againB, "again\0", my_font, fore_color, back_color);
+	//texturefromtext(authorB, "author\0", my_font, fore_color, back_color);
 
-	texturefromtext(level1B, "level 1\0", my_font, fore_color, back_color);
-	texturefromtext(level2B, "level 2\0", my_font, fore_color, back_color);
-	texturefromtext(level3B, "level 3\0", my_font, fore_color, back_color);
-	texturefromtext(customB, "custom\0", my_font, fore_color, back_color);
+	//texturefromtext(level1B, "level 1\0", my_font, fore_color, back_color);
+	//texturefromtext(level2B, "level 2\0", my_font, fore_color, back_color);
+	//texturefromtext(level3B, "level 3\0", my_font, fore_color, back_color);
+	//texturefromtext(customB, "custom\0", my_font, fore_color, back_color);
 
 	//SDL_RenderCopy(renderer, texture, NULL, &rect);
 	//SDL_DestroyTexture(texture);
@@ -515,10 +491,10 @@ void eachFrame(float delta)
 		char* buf = (char*)malloc(sizeof(char) * 50);
 		_itoa_s(curtime, buf, 50, 10);
 		strcat_s(buf, 50, " seconds is your time");
-		texturefromtext(timeLabel, buf, my_font, fore_color, back_color);
+		//texturefromtext(timeLabel, buf, my_font, fore_color, back_color);
 		_itoa_s(bestLevelTime, buf, 50, 10);
 		strcat_s(buf, 50, " seconds is record");
-		texturefromtext(recordLabel, buf, my_font, fore_color, back_color);
+		//texturefromtext(recordLabel, buf, my_font, fore_color, back_color);
 		free(buf);
 		TTF_CloseFont(my_font);
 		TTF_Quit();
@@ -533,28 +509,15 @@ void eachFrame(float delta)
 	}
 }
 
-void ZHIR_updateButton(Button& button)
-{
-	SDL_SetRenderDrawColor(ren, 150, 0, 150, 255);
 
-	SDL_RenderFillRect(ren, &button.rect);
-	SDL_Rect rect = { button.rect.x + button.rect.w / 4, button.rect.y + button.rect.h / 4, button.rect.w / 2, button.rect.h / 2 };
-	SDL_RenderCopy(ren, button.textTexture, NULL, &rect);
-
-	SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-	if (input_LMB && ZHIR_pointInRect(MousePos, button.rect))
-		button.pressed = true;
-	else
-		button.pressed = false;
-}
 
 void levelSelectEachFrame()
 {
-	ZHIR_updateButton(level1B);
-	ZHIR_updateButton(level2B);
-	ZHIR_updateButton(level3B);
-	ZHIR_updateButton(customB);
-	if (level1B.pressed)
+	//ZHIR_updateButton(level1B);
+	//ZHIR_updateButton(level2B);
+	//ZHIR_updateButton(level3B);
+	//ZHIR_updateButton(customB);
+	/*if (level1B.pressed)
 	{
 		curlevel = (char*)realloc(curlevel, sizeof(char) * 30);
 		strcpy_s(curlevel, 30, "gamelevels\\level1.bin");
@@ -581,67 +544,66 @@ void levelSelectEachFrame()
 		strcpy_s(curlevel, 30, "gamelevels\\custom.bin");
 		onLevelStart("gamelevels\\custom.bin");
 		GameState = GAME;
-	}
+	}*/
 }
 
 void authorEachFrame()
 {
-	SDL_Rect r = { WIN_CENTER.x - author.w * 1.5 / 2, WIN_CENTER.y /1.5 - author.h * 1.5 /2 , author.w * 1.5, author.h * 1.5 };
-	SDL_Rect sr = { 0, 0, author.w, author.h };
-	int temp = exitB.rect.y;
-	exitB.rect.y = WIN_HEIGHT - exitB.rect.h - WIN_HEIGHT / 12;
-	SDL_RenderCopy(ren, author.texture, &sr, &r);
-	ZHIR_updateButton(exitB);
-	exitB.rect.y = temp;
-	if (exitB.pressed)
-	{
-		input_LMB = false;
-		exitB.pressed = false;
-		GameState = MENU;
-	}
+	//SDL_Rect r = { WIN_CENTER.x - author.w * 1.5 / 2, WIN_CENTER.y /1.5 - author.h * 1.5 /2 , author.w * 1.5, author.h * 1.5 };
+	//SDL_Rect sr = { 0, 0, author.w, author.h };
+	//int temp = exitB.rect.y;
+	//exitB.rect.y = WIN_HEIGHT - exitB.rect.h - WIN_HEIGHT / 12;
+	//SDL_RenderCopy(ren, author.texture, &sr, &r);
+	//ZHIR_updateButton(exitB);
+	//exitB.rect.y = temp;
+	//if (exitB.pressed)
+	//{
+	//	input_LMB = false;
+	//	exitB.pressed = false;
+	//	GameState = MENU;
+	//}
 }
 
 void mainMenuEachFrame()
 {
-	ZHIR_updateButton(startB);
-	ZHIR_updateButton(exitB);
-	ZHIR_updateButton(authorB);
-	if (startB.pressed)
-	{
-		input_LMB = false;
-		GameState = LEVELSELECT;
-	}
-	if (exitB.pressed)
-		GameState = EXIT;
-	if(authorB.pressed)
-		GameState = AUTHOR;
-
+	//ZHIR_updateButton(startB);
+	//ZHIR_updateButton(exitB);
+	//ZHIR_updateButton(authorB);
+	//if (startB.pressed)
+	//{
+	//	input_LMB = false;
+	//	GameState = LEVELSELECT;
+	//}
+	//if (exitB.pressed)
+	//	GameState = EXIT;
+	//if(authorB.pressed)
+	//	GameState = AUTHOR;
 }
 
 void winLevelEachFrame()
 {
-	ZHIR_updateButton(timeLabel);
-	ZHIR_updateButton(recordLabel);
-	ZHIR_updateButton(againB);
-	ZHIR_updateButton(exitB);
-	if (againB.pressed)
-	{
-		SDL_DestroyTexture(timeLabel.textTexture);
-		SDL_DestroyTexture(recordLabel.textTexture);
-		onLevelStart(curlevel);
-		GameState = GAME;
-	}
-	if (exitB.pressed)
-	{
-		exitB.pressed = false;
-		input_LMB = false;
-		GameState = MENU;
-	}
+	//ZHIR_updateButton(timeLabel);
+	//ZHIR_updateButton(recordLabel);
+	//ZHIR_updateButton(againB);
+	//ZHIR_updateButton(exitB);
+	//if (againB.pressed)
+	//{
+	//	SDL_DestroyTexture(timeLabel.textTexture);
+	//	SDL_DestroyTexture(recordLabel.textTexture);
+	//	onLevelStart(curlevel);
+	//	GameState = GAME;
+	//}
+	//if (exitB.pressed)
+	//{
+	//	exitB.pressed = false;
+	//	input_LMB = false;
+	//	GameState = MENU;
+	//}
 }
 
 void lostLevelEachFrame()
 {
-	ZHIR_updateButton(againB);
+	/*ZHIR_updateButton(againB);
 	ZHIR_updateButton(exitB);
 	if (againB.pressed)
 	{
@@ -653,7 +615,7 @@ void lostLevelEachFrame()
 		exitB.pressed = false;
 		input_LMB = false;
 		GameState = MENU;
-	}
+	}*/
 }
 
 void onLevelEnd()
@@ -669,14 +631,14 @@ void onEnd()
 	//onLevelEnd();
 
 	free(curlevel);
-	SDL_DestroyTexture(startB.textTexture);
-	SDL_DestroyTexture(exitB.textTexture);
+	//SDL_DestroyTexture(startB.textTexture);
+	//SDL_DestroyTexture(exitB.textTexture);
 
-	SDL_DestroyTexture(level1B.textTexture);
-	SDL_DestroyTexture(level2B.textTexture);
-	SDL_DestroyTexture(level3B.textTexture);
-	SDL_DestroyTexture(customB.textTexture);
+	//SDL_DestroyTexture(level1B.textTexture);
+	//SDL_DestroyTexture(level2B.textTexture);
+	//SDL_DestroyTexture(level3B.textTexture);
+	//SDL_DestroyTexture(customB.textTexture);
 
-	SDL_DestroyTexture(sprite1.texture);
-	SDL_DestroyTexture(BulletSprite.texture);
+	//SDL_DestroyTexture(sprite1.texture);
+	//SDL_DestroyTexture(BulletSprite.texture);
 }
