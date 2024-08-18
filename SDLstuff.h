@@ -45,9 +45,9 @@ void Init();
 #pragma region BasicMath
 
 //случайное целое число от a до b
-int ZHIR_random(int a, int b);
+int ZHIR_rand(int a, int b);
 
-//линейна€ интерпол€ци€ от a до б с шагом t (t - процент от разницы между a и b) 
+//линейна€ интерпол€ци€ от a до b с шагом t (t - процент от разницы между a и b) 
 //t нужно домножать на delta
 float ZHIR_lerp(float a, float b, float t);
 
@@ -60,6 +60,16 @@ int ZHIR_slap(int ch, int a, int b);
 float ZHIR_slapF(float ch, float a, float b);
 
 #pragma endregion //BasicMath
+
+#pragma region Convertation
+
+// онвертаци€ из SDL_Point в SDL_FPoint
+SDL_FPoint FPoint(SDL_Point p);
+
+// онвертаци€ из SDL_FPoint в SDL_Point (с округлением)
+SDL_Point Point(SDL_FPoint p);
+
+#pragma endregion //Convertation
 
 #pragma region VectorMath & Geometry
 
@@ -76,7 +86,7 @@ struct ZHIR_LineF
 };
 
 //возвращет длину вектора заданого двум€ координатами
-float ZHIR_vecLength(const SDL_Point& vec);
+int ZHIR_vecLength(const SDL_Point& vec);
 float ZHIR_vecLengthF(const SDL_FPoint& vec);
 
 //¬озвращает вектор получившийс€ в результате сложени€ двух веторов
@@ -98,7 +108,7 @@ SDL_FPoint ZHIR_vecMultF(const SDL_FPoint& a, float b);
 int ZHIR_vecMultScalar(const SDL_Point& a, const SDL_Point& b);
 float ZHIR_vecMultScalarF(const SDL_FPoint& a, const SDL_FPoint& b);
 
-//ѕоворачивает точку point на угол относительно rotationPoint
+//ѕоворачивает точку point на угол относительно rotationPoint почасовой стрелке
 SDL_Point ZHIR_rotateOnDegree(const SDL_Point& point, const SDL_Point& rotationPoint, const float angle);
 SDL_FPoint ZHIR_rotateOnDegreeF(const SDL_FPoint& point, const SDL_FPoint& rotationPoint, const float angle);
 
@@ -109,8 +119,12 @@ bool ZHIR_isOnLineF(const ZHIR_LineF& line, const SDL_FPoint& p);
 //ѕровер€ет 2 линии на пересечение
 bool ZHIR_isIntersect(const ZHIR_Line& line1, const ZHIR_Line& line2);
 bool ZHIR_isIntersectF(const ZHIR_LineF& line1, const ZHIR_LineF& line2);
+bool ZHIR_isIntersectFstrict(const ZHIR_LineF& line1, const ZHIR_LineF& line2);
 
-//¬озвращает точку пересечени€ двух отрезков
+ZHIR_LineF cutLineInRect(ZHIR_LineF line, SDL_FRect rect);
+SDL_FPoint lineRectIntersection(ZHIR_LineF line, SDL_FRect rect);
+
+//¬озвращает точку пересечени€ двух линий заданых отрезками
 SDL_Point ZHIR_findIntersect(const ZHIR_Line& line1, const ZHIR_Line& line2);
 SDL_FPoint ZHIR_findIntersectF(const ZHIR_LineF& line1, const ZHIR_LineF& line2);
 
@@ -187,7 +201,9 @@ void ZHIR_drawTriangle(const SDL_Point& p1, const SDL_Point& p2, const SDL_Point
 void ZHIR_drawLine(const ZHIR_Line& line);
 void ZHIR_drawLineF(const ZHIR_LineF& line);
 
-void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec);
+//void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec);
+//
+//void SDL_drawLineF(ZHIR_LineF line);
 
 #pragma endregion //Draw
 

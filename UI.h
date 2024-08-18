@@ -4,6 +4,7 @@
 
 #include "SDLstuff.h"
 #include "Input.h"
+#include "Structs.h"
 
 #pragma region TOOLS
 
@@ -14,7 +15,7 @@ void updateButton(Button& button);
 
 #pragma region MENU_HARDCODE
 
-
+void minimap(const ZHIR_LineF* linesArr, int linesArrSize, Entity** entityArr, int entityArrSize);
 
 #pragma endregion //MENU-HARDCODE
 

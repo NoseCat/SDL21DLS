@@ -2,8 +2,6 @@
 
 #pragma region INIT
 
-extern SDL_FPoint playerPosition;
-
 int WIN_WIDTH = 1280;
 int WIN_HEIGHT = 720;
 SDL_Point WIN_CENTER = { WIN_WIDTH / 2, WIN_HEIGHT / 2 };
@@ -23,7 +21,7 @@ void deInit(int error)
 }
 void Init()
 {
-	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO) != 0)
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		printf("no sdl :( %s", SDL_GetError());
 		system("pause");
@@ -74,24 +72,16 @@ void Init()
 
 #pragma region BasicMath
 
-//случайное целое число от a до b
-int ZHIR_random(int a, int b)
+int ZHIR_rand(int a, int b)
 {
 	return rand() % (b - a + 1) + a;
 }
-//float ZHIR_randomF(const int& a, const int& b)
-//{
-//	return rand() % (b - a + 1) + a;
-//}
 
-//линейная интерполяция от a до б с шагом t (t - процент от разницы между a и b) 
-//t нужно домножать на delta
 float ZHIR_lerp(float a, float b, float t)
 {
 	return a + t * (b - a);
 }
 
-//меняет местами a и b
 void ZHIR_swap(int& a, int& b)
 {
 	a ^= b ^= a ^= b;
@@ -103,7 +93,6 @@ void ZHIR_swapF(float& a, float& b)
 	b = c;
 }
 
-//ограничивает число в промежутке от a до b 
 int ZHIR_slap(int ch, int a, int b)
 {
 	if (a > b)
@@ -132,10 +121,32 @@ float ZHIR_slapF(float ch, float a, float b)
 
 #pragma endregion //BasicMath
 
-#pragma region VectorMath & Geometry
-float ZHIR_vecLength(const SDL_Point& vec)
+#pragma region Convertation
+
+//Конвертация из SDL_Point в SDL_FPoint
+SDL_FPoint FPoint(SDL_Point p)
 {
-	return sqrt(vec.x * vec.x + vec.y * vec.y);
+	return {(float)p.x, (float)p.y};
+}
+
+//Конвертация из SDL_FPoint в SDL_Point (с округлением)
+SDL_Point Point(SDL_FPoint p)
+{
+	return { (int)round(p.x), (int)round(p.y) };
+}
+
+//Конвертация из SDL_FRect в SDL_Rect
+SDL_Rect ZHIR_FRectToRect(const SDL_FRect& rect)
+{
+	return { (int)round(rect.x), (int)round(rect.y), (int)round(rect.w), (int)round(rect.h) };
+}
+
+#pragma endregion //Convertation
+
+#pragma region VectorMath & Geometry
+int ZHIR_vecLength(const SDL_Point& vec)
+{
+	return (int)round(sqrt(vec.x * vec.x + vec.y * vec.y));
 }
 float ZHIR_vecLengthF(const SDL_FPoint& vec)
 {
@@ -351,6 +362,97 @@ bool ZHIR_isIntersectF(const ZHIR_LineF& line1, const ZHIR_LineF& line2)
 	}
 	return false;
 }
+bool ZHIR_isIntersectFstrict(const ZHIR_LineF& line1, const ZHIR_LineF& line2)
+{
+	// Уравнение первой прямой
+	float A1 = line1.b.y - line1.a.y;
+	float B1 = line1.a.x - line1.b.x;
+	float C1 = line1.b.x * line1.a.y - line1.a.x * line1.b.y;
+
+	// Уравнение второй прямой
+	float A2 = line2.b.y - line2.a.y;
+	float B2 = line2.a.x - line2.b.x;
+	float C2 = line2.b.x * line2.a.y - line2.a.x * line2.b.y;
+
+	// Проверка пересечения отрезков
+	if ((A1 * line2.a.x + B1 * line2.a.y + C1) * (A1 * line2.b.x + B1 * line2.b.y + C1) < 0 &&
+		(A2 * line1.a.x + B2 * line1.a.y + C2) * (A2 * line1.b.x + B2 * line1.b.y + C2) < 0) {
+		return true;
+	}
+	return false;
+}
+
+ZHIR_LineF cutLineInRect(ZHIR_LineF line, SDL_FRect rect)
+{
+	SDL_FPoint A = { 0,0 };
+	SDL_FPoint B = { 0,0 };
+	if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+	{
+		A = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+		else if ((ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} })))
+			B = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	else if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+	{
+		A = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+			B = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	else if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+	{
+		A = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+			B = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+		else if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	else if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+	{
+		A = ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+
+		if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+			B = ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+		else if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+		else if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+			B = ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+	}
+	return { A,B };
+}
+
+SDL_FPoint lineRectIntersection(ZHIR_LineF line, SDL_FRect rect)
+{
+	if (ZHIR_isIntersectFstrict(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } }))
+	{
+		return ZHIR_findIntersectF(line, { { rect.x, rect.y }, {rect.x + rect.w, rect.y } });
+	}
+	if (ZHIR_isIntersectFstrict(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} }))
+	{
+		return ZHIR_findIntersectF(line, { { rect.x + rect.w, rect.y }, {rect.x + rect.w, rect.y + rect.h} });
+	}
+	if (ZHIR_isIntersectFstrict(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} }))
+	{
+		return ZHIR_findIntersectF(line, { {rect.x + rect.w, rect.y + rect.h}, {rect.x, rect.y + rect.h} });
+	}
+	if (ZHIR_isIntersectFstrict(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} }))
+	{
+		return ZHIR_findIntersectF(line, { {rect.x, rect.y}, {rect.x, rect.y + rect.h} });
+	}
+	return { 0,0 };
+}
 
 int ZHIR_rectOverlap(const SDL_Rect& rect1, const SDL_Rect& rect2)
 {
@@ -366,11 +468,6 @@ int ZHIR_rectOverlap(const SDL_Rect& rect1, const SDL_Rect& rect2)
 		return 0;
 
 	return width * height;
-}
-
-SDL_Rect ZHIR_FRectToRect(const SDL_FRect& rect)
-{
-	return { (int)round(rect.x), (int)round(rect.y), (int)round(rect.w), (int)round(rect.h) };
 }
 
 #pragma endregion //VectorMath & Geometry 
@@ -513,22 +610,27 @@ void ZHIR_drawLineF(const ZHIR_LineF& line)
 	SDL_RenderDrawLineF(ren, line.a.x, line.a.y, line.b.x, line.b.y);
 }
 
-//???
-void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec = 0.5f)
-{
-	SDL_FPoint normVec = ZHIR_vecNormal(ZHIR_vecSubF(line.a, line.b));
-	normVec = ZHIR_rotateOnDegreeF(normVec, { 0,0 }, 90);
-	ZHIR_LineF bold = line;
-	
-	float thick = 0;
-	float flip = -1;
-	for (int i = 0; i < thickness; i++, thick += prec, flip *= -1)
-	{
-		bold.a = ZHIR_vecSumF(line.a, ZHIR_vecMultF(normVec, thick * flip));
-		bold.b = ZHIR_vecSumF(line.b, ZHIR_vecMultF(normVec, thick * flip));
-		ZHIR_drawLineF(bold);
-	}
-}
+////???
+//void ZHIR_drawLineBoldF(const ZHIR_LineF& line, int thickness, float prec = 0.5f)
+//{
+//	SDL_FPoint normVec = ZHIR_vecNormal(ZHIR_vecSubF(line.a, line.b));
+//	normVec = ZHIR_rotateOnDegreeF(normVec, { 0,0 }, 90);
+//	ZHIR_LineF bold = line;
+//	
+//	float thick = 0;
+//	float flip = -1;
+//	for (int i = 0; i < thickness; i++, thick += prec, flip *= -1)
+//	{
+//		bold.a = ZHIR_vecSumF(line.a, ZHIR_vecMultF(normVec, thick * flip));
+//		bold.b = ZHIR_vecSumF(line.b, ZHIR_vecMultF(normVec, thick * flip));
+//		ZHIR_drawLineF(bold);
+//	}
+//}
+//
+//void SDL_drawLineF(ZHIR_LineF line)
+//{
+//	SDL_RenderDrawLineF(ren, line.a.x, line.a.y, line.b.x, line.b.y);
+//}
 #pragma endregion //Draw
 
 #pragma region Timer
